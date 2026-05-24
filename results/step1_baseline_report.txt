@@ -1,0 +1,37 @@
+== step1_baseline ==
+Tokenizer: snunlp/KR-BERT-char16424
+Encoder:   snunlp/KR-BERT-char16424
+Hyperparams: {"lr": 3e-05, "batch_size": 32, "epochs": 2, "max_length": 64, "dropout": 0.2, "weight_decay": 0.01, "warmup_ratio": 0.2, "label_smoothing": 0.05, "grad_clip": 1.0, "seed": 42}
+
+Test Accuracy:    0.7729
+Test F1-Macro:    0.7593
+Test F1-Weighted: 0.7647
+
+Per-class:
+              precision    recall  f1-score   support
+
+          중립     0.5868    0.4190    0.4889      3599
+          슬픔     0.7447    0.7762    0.7601      3423
+          행복     0.6054    0.5987    0.6020      3439
+          분노     0.7304    0.7371    0.7337      3568
+          놀람     0.8311    0.9068    0.8673      3722
+          공포     0.9171    0.9939    0.9540      4086
+          혐오     0.8845    0.9352    0.9091      3626
+
+    accuracy                         0.7729     25463
+   macro avg     0.7571    0.7667    0.7593     25463
+weighted avg     0.7617    0.7729    0.7647     25463
+
+Confusion matrix (rows=true, cols=pred):
+        중립     슬픔     행복     분노     놀람     공포     혐오
+  중립   1508    497    654    409    316     80    135
+  슬픔    285   2657    241     79     98     31     32
+  행복    409    232   2059    350    117    136    136
+  분노    220     97    330   2630    125     52    114
+  놀람     88     60     64     65   3375     47     23
+  공포      2      0     12      0      8   4061      3
+  혐오     58     25     41     68     22     21   3391
+
+Epoch history:
+  {"epoch": 1, "train_loss": 1.3555194038249003, "train_acc": 0.5276823986175633, "val_acc": 0.7112001256676092, "val_f1m": 0.6972748377006531}
+  {"epoch": 2, "train_loss": 0.806215049644775, "train_acc": 0.7760946161269329, "val_acc": 0.7650015708451147, "val_f1m": 0.7499587018737125}
