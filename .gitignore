@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Data
+*.xlsx
+*.xls
+*.csv
+*.pkl
+*.bin
+saved_models/
+models/
+models_jeju/
+results/*.png
+data/
+제주도_학습용데이터_*/
+
+# Secrets
+.env
+config_local.py
+
+# OS
+Thumbs.db
