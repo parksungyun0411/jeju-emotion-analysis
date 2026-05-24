@@ -126,21 +126,6 @@ class MultiSentenceProcessor:
             logger.error(f"감정 분류 중 오류 발생: {e}")
             return 0, "중립"
     
-    def split_sentences(self, text: str) -> List[str]:
-        """
-        문장을 . ? ! 기준으로 나누는 함수
-        """
-        # 문장 구분자 패턴
-        sentence_pattern = r'[.!?]'
-        
-        # 문장 구분자로 나누기
-        sentences = re.split(sentence_pattern, text)
-        
-        # 빈 문자열 제거하고 앞뒤 공백 제거
-        sentences = [s.strip() for s in sentences if s.strip()]
-        
-        return sentences
-    
     def split_sentence_pairs(self, jeju_text: str, standard_text: str) -> List[Tuple[str, str]]:
         """
         제주어와 표준어 문장을 함께 . ? ! 기준으로 나누어 쌍으로 만드는 함수
@@ -351,6 +336,7 @@ def main():
         print("   - 한 셀에 여러 문장이 있는 경우 감정 분석")
         print("   - 가장 감정이 강한 문장만 남기고 나머지 삭제")
         print("   - 문장 구분: . ? ! 기준")
+        print("   - 제주어와 표준어 쌍을 함께 처리")
         print("=" * 60)
         
         # Excel 파일 처리
