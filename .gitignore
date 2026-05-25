@@ -37,3 +37,11 @@ config_local.py
 
 # OS
 Thumbs.db
+
+# macOS AppleDouble (external drive)
+._*
+
+# 학습 런타임 산출물 (로그/npz/모델). 최종 리포트만 -f로 선택 추가
+results_kr_bert/
+results_smoke/
+results_probe/
