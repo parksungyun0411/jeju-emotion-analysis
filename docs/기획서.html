@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>탐라(Tamna) — 제주 올인원 앱 기획서</title>
+<style>
+  :root {
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --line: #e2e8f0;
+    --accent: #ea6a3a;        /* 제주 감귤 톤 */
+    --accent-deep: #c2480f;
+    --sea: #1f7a8c;           /* 제주 바다 톤 */
+    --bg-soft: #fbf7f2;
+    --th-bg: #f4ede4;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Malgun Gothic", "Noto Sans KR", "맑은 고딕", sans-serif;
+    color: var(--ink);
+    line-height: 1.75;
+    margin: 0;
+    background: #f1f3f5;
+    font-size: 15px;
+  }
+  .page {
+    max-width: 880px;
+    margin: 32px auto;
+    background: #fff;
+    padding: 56px 64px 72px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: 4px;
+  }
+  header.doc {
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 22px;
+    margin-bottom: 8px;
+  }
+  header.doc h1 {
+    font-size: 30px;
+    margin: 0 0 6px;
+    letter-spacing: -0.5px;
+  }
+  header.doc .sub { color: var(--sea); font-weight: 600; font-size: 15px; }
+  header.doc .meta { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  .callout {
+    background: var(--bg-soft);
+    border-left: 4px solid var(--accent);
+    padding: 12px 18px;
+    margin: 18px 0 26px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13.5px;
+    color: #4b5563;
+  }
+  nav.toc {
+    background: #fafafa;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 24px;
+    margin-bottom: 36px;
+  }
+  nav.toc h2 { font-size: 15px; margin: 0 0 10px; color: var(--accent-deep); border: none; padding: 0; }
+  nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+  nav.toc li { margin: 3px 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  h2 {
+    font-size: 21px;
+    margin: 42px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--line);
+    color: var(--accent-deep);
+  }
+  h2 .num {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0 10px;
+    margin-right: 10px;
+    font-size: 16px;
+    vertical-align: middle;
+  }
+  h3 { font-size: 16.5px; margin: 26px 0 8px; color: var(--sea); }
+  h4 { font-size: 14.5px; margin: 20px 0 6px; color: var(--ink); }
+  p { margin: 10px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  strong { color: var(--accent-deep); }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0 22px;
+    font-size: 13.5px;
+  }
+  th, td {
+    border: 1px solid var(--line);
+    padding: 8px 11px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--th-bg); color: #5b4636; font-weight: 700; }
+  tbody tr:nth-child(even) { background: #fbfbfb; }
+  td strong { color: var(--accent-deep); }
+  blockquote {
+    margin: 16px 0;
+    padding: 10px 18px;
+    background: #f6fafb;
+    border-left: 4px solid var(--sea);
+    color: #355;
+    border-radius: 0 6px 6px 0;
+    font-size: 13.5px;
+  }
+  pre {
+    background: #2b2b2b;
+    color: #e8e8e8;
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.55;
+    font-family: "SF Mono", Consolas, "D2Coding", monospace;
+  }
+  .footer-note {
+    margin-top: 44px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12.5px;
+    font-style: italic;
+  }
+  @media print {
+    body { background: #fff; font-size: 11pt; }
+    .page { box-shadow: none; margin: 0; max-width: 100%; padding: 0 8mm; border-radius: 0; }
+    nav.toc { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    table, pre, blockquote { break-inside: avoid; }
+    h2, h3 { break-inside: avoid; }
+  }
+  @media (max-width: 640px) {
+    .page { padding: 28px 20px; margin: 0; }
+    nav.toc ol { columns: 1; }
+    header.doc h1 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc">
+  <h1>탐라(Tamna) — 제주 올인원 앱 기획서</h1>
+  <div class="sub">제주에 관한 모든 것을 담는 4탭 모바일 웹앱</div>
+  <div class="meta">
+    건국대학교 스마트ICT융합공학과 졸업프로젝트 &nbsp;·&nbsp; 작성일 2026-05-25 (v2 — 범위 확대 전면 재작성)
+  </div>
+</header>
+
+<div class="callout">
+  본 기획서는 기존 "제주어 챗봇 한정 기획서"를 대체한다. 챗봇은 본 앱의 <strong>탭 1(제주어)</strong>로 흡수되었으며,
+  프로젝트는 제주도에 관한 모든 것을 담는 <strong>4탭 모바일 웹앱</strong>으로 확대되었다.
+</div>
+
+<nav class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#s1">프로젝트 개요</a></li>
+    <li><a href="#s2">문제 정의 및 필요성</a></li>
+    <li><a href="#s3">목표 및 범위</a></li>
+    <li><a href="#s4">대상 사용자 · 페르소나 · 시나리오</a></li>
+    <li><a href="#s5">탭별 주요 기능 상세</a></li>
+    <li><a href="#s6">기술 개요</a></li>
+    <li><a href="#s7">기대 효과 및 활용 방안</a></li>
+    <li><a href="#s8">추진 일정</a></li>
+    <li><a href="#s9">위험 요소 및 대응</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<h2 id="s1"><span class="num">1</span>프로젝트 개요</h2>
+<table>
+  <tbody>
+    <tr><th style="width:22%">앱 이름 (확정)</th><td><strong>탐라 (Tamna)</strong> — 제주의 옛 이름에서 따온 가제로, 제주의 정체성과 "모든 것을 품는다"는 의미를 함께 담는다.</td></tr>
+    <tr><th>한 줄 소개</th><td>제주 여행·생활에 필요한 모든 것 — 제주어 번역/감정분석, 맛집, 명소·체험, AI 여행경로, 커뮤니티 — 을 한 앱에 담은 <strong>제주 올인원 모바일 웹앱</strong></td></tr>
+    <tr><th>형태</th><td>모바일 우선 반응형 웹앱 (하단 4탭 네비게이션), 추후 PWA/네이티브 래핑 확장</td></tr>
+    <tr><th>분류</th><td>위치기반 서비스(LBS) + NLP(소멸위기언어) + 커뮤니티 + 생성형 AI</td></tr>
+    <tr><th>대상 학기</th><td>1학기 번역기 제안 → 2학기 감정분류 → <strong>통합 올인원 앱</strong>(현재)</td></tr>
+  </tbody>
+</table>
+
+<h3>추진 배경</h3>
+<p>제주어는 <strong>유네스코가 지정한 소멸위기언어(2010년, "심각한 위기" 등급)</strong>이며, 표준어 중심 환경과 세대 간 단절로 젊은 세대는 제주어를 이해할 기회가 급격히 줄고 있다. 본 프로젝트는 이 문제의식에서 출발해 1·2학기 동안 <strong>제주어 번역기 제안</strong>과 <strong>제주어 감정분류(F1-Macro 0.84)</strong>라는 ML 자산을 축적했다.</p>
+<p>한편 실제 사용자(여행객·이주자)를 만나며 확인한 것은, 제주에서 필요한 정보(언어·맛집·명소·체험·여행 일정·현지 꿀팁)가 <strong>여러 앱과 블로그·지도·검색에 파편적으로 흩어져 있다</strong>는 점이다. 이에 본 프로젝트는 기존 제주어 ML 성과를 <strong>하나의 탭으로 흡수</strong>하고, 그 위에 맛집 지도·명소 큐레이션·AI 여행경로·커뮤니티를 더해, 제주에 관한 모든 것을 한 곳에서 해결하는 <strong>올인원 앱 "탐라"</strong>로 범위를 확대한다.</p>
+
+<!-- 2 -->
+<h2 id="s2"><span class="num">2</span>문제 정의 및 필요성</h2>
+<h3>문제</h3>
+<table>
+  <thead><tr><th style="width:6%">#</th><th style="width:24%">문제</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><strong>정보 분산</strong></td><td>제주 여행/생활 정보(맛집·명소·체험·교통·꿀팁)가 지도앱, 블로그, 검색, 커뮤니티 등에 흩어져 있어 사용자가 앱을 계속 바꿔 가며 정보를 모아야 한다.</td></tr>
+    <tr><td>2</td><td><strong>언어 장벽</strong></td><td>제주어는 어휘·어미가 표준어와 크게 달라 비제주민·젊은 세대가 현지인의 말, 간판, 메시지를 이해하기 어렵다.</td></tr>
+    <tr><td>3</td><td><strong>일정 설계의 어려움</strong></td><td>가고 싶은 명소를 골라도 동선·일자별 배치를 짜는 것은 수작업이며 시간이 많이 든다.</td></tr>
+    <tr><td>4</td><td><strong>현지 정보 부족</strong></td><td>검증된 현지 꿀팁·질의응답을 모을 공간이 없어, 같은 질문이 분산된 채 반복된다.</td></tr>
+    <tr><td>5</td><td><strong>성과의 파편화</strong></td><td>번역·감정분류 ML 성과가 연구로만 남아, 사용자가 실제로 손에 쥐고 쓰는 제품으로 이어지지 못했다.</td></tr>
+  </tbody>
+</table>
+<h3>필요성</h3>
+<table>
+  <thead><tr><th style="width:24%">관점</th><th>필요성</th></tr></thead>
+  <tbody>
+    <tr><td><strong>사용자 편익</strong></td><td>흩어진 제주 정보를 하나의 앱에서 끊김 없이 — 검색·이해·계획·소통까지 — 해결</td></tr>
+    <tr><td><strong>문화 보존</strong></td><td>소멸위기언어인 제주어의 디지털 접근성을 높여 학습·소통 촉진</td></tr>
+    <tr><td><strong>기술 가치</strong></td><td>저자원 방언 NLP + 위치기반 서비스 + 생성형 AI를 결합한 실증 사례</td></tr>
+    <tr><td><strong>활용성</strong></td><td>관광·콘텐츠·교육·언어연구 등 다방면 응용 기반 마련</td></tr>
+  </tbody>
+</table>
+<blockquote>기존 sklearn TF-IDF 베이스라인은 제주어 감정분류에서 F1-Macro <strong>0.30</strong>에 그쳤으나, 딥러닝 전환(KR-BERT 단일 0.76 → 앙상블 0.84)으로 실용 수준을 확보했다. 즉, 본 앱의 탭 1은 <strong>이미 검증된 기술 토대</strong> 위에서 동작한다.</blockquote>
+
+<!-- 3 -->
+<h2 id="s3"><span class="num">3</span>목표 및 범위</h2>
+<h3>목표</h3>
+<p>제주 여행·생활에 필요한 핵심 기능을 <strong>4개 탭</strong>으로 통합한 모바일 웹앱 "탐라"를 완성한다. 각 탭은 독립적으로 동작하면서도 사용자 여정 속에서 자연스럽게 이어진다.</p>
+<h3>4탭 기능 상세</h3>
+<table>
+  <thead><tr><th style="width:7%">탭</th><th style="width:16%">이름</th><th>핵심 기능</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1</strong></td><td><strong>제주어</strong></td><td>제주어↔표준어 양방향 번역 + 제주어 입력 감정분석(7종, 신뢰도 포함). 기존 ML 자산 활용.</td></tr>
+    <tr><td><strong>2</strong></td><td><strong>맛집</strong></td><td>카카오 지도에 제주 맛집 마커 표시, 마커 클릭 시 상세(이름/카테고리/주소/평점), 지역·카테고리 필터·검색, <strong>길찾기</strong>.</td></tr>
+    <tr><td><strong>3</strong></td><td><strong>명소·체험</strong></td><td>가볼 명소/할 체험을 지도에 큐레이션(자연/문화/체험/포토), 상세·길찾기, 다중 선택, <strong>AI 여행경로 생성</strong>(일자별 동선).</td></tr>
+    <tr><td><strong>4</strong></td><td><strong>커뮤니티</strong></td><td>제주 Q&amp;A·꿀팁·후기 게시/댓글/좋아요. <strong>로그인(Google/Kakao) 필요</strong>, <strong>마이페이지</strong>(내 글·댓글·북마크).</td></tr>
+  </tbody>
+</table>
+
+<h3>MVP 정의 (이번 사이클 목표)</h3>
+<p>기동 가능한 <strong>4탭 앱 셸</strong>을 기준으로, 키·모델이 없어도 앱이 뜨고 탐색되는 것을 수용 기준으로 한다.</p>
+<table>
+  <thead><tr><th style="width:22%">탭/요소</th><th style="width:34%">MVP 범위</th><th>키·모델 미주입 시 동작</th></tr></thead>
+  <tbody>
+    <tr><td>탭1 제주어</td><td>ML 서비스 연결(번역·감정)</td><td>"모델 학습 중" 안내 (503 graceful)</td></tr>
+    <tr><td>탭2 맛집</td><td>지도·마커·상세·길찾기</td><td>seed JSON 데이터로 동작, Kakao 키 주입 시 실데이터</td></tr>
+    <tr><td>탭3 명소·체험</td><td>지도·마커·상세·길찾기 + AI경로 라우트</td><td>seed 데이터로 동작, AI경로는 키 주입 시</td></tr>
+    <tr><td>탭4 커뮤니티</td><td>게시판 CRUD(SQLite) + 로그인·마이페이지</td><td>CRUD 동작, 로그인은 OAuth 키 주입 시</td></tr>
+  </tbody>
+</table>
+
+<h3>비목표 (YAGNI — MVP에서 명시적으로 제외)</h3>
+<ul>
+  <li><strong>결제 / 예약</strong> — 외부 예약·결제 연동 없음</li>
+  <li><strong>실시간 채팅</strong> — 커뮤니티는 비동기 게시/댓글로 충분</li>
+  <li><strong>푸시 알림</strong> — 브라우저 알림 등 미포함</li>
+  <li><strong>네이티브 앱 스토어 배포</strong> — 반응형 웹으로 "어플" 경험 제공, 추후 PWA/네이티브 래핑</li>
+  <li><strong>오프라인 모드</strong> — 온라인 전제</li>
+</ul>
+<blockquote>위 항목은 모두 <em>향후 과제</em>로 남기며, 각 탭이 독립적·모듈식으로 설계되어 확장이 용이하다.</blockquote>
+
+<h3>성공 지표</h3>
+<table>
+  <thead><tr><th style="width:24%">영역</th><th style="width:30%">지표</th><th>목표</th></tr></thead>
+  <tbody>
+    <tr><td>감정 분류(탭1)</td><td>Test F1-Macro</td><td><strong>0.84</strong> (발표본 재현, 진행 중)</td></tr>
+    <tr><td>번역(탭1)</td><td>BLEU / chrF</td><td>테스트셋 측정·보고, 베이스라인 대비 향상 입증</td></tr>
+    <tr><td>앱 셸</td><td>4탭 기동·탐색</td><td>키·모델 없이도 앱이 뜨고 모든 탭 탐색 가능</td></tr>
+    <tr><td>통합 데모</td><td>end-to-end</td><td>키·모델 주입 시 4탭 전 기능 동작</td></tr>
+  </tbody>
+</table>
+
+<!-- 4 -->
+<h2 id="s4"><span class="num">4</span>대상 사용자 · 페르소나 · 사용 시나리오</h2>
+<h3>대상 사용자</h3>
+<table>
+  <thead><tr><th style="width:30%">사용자</th><th>핵심 니즈</th></tr></thead>
+  <tbody>
+    <tr><td><strong>제주 여행객</strong></td><td>맛집·명소·체험 탐색, 동선 계획, 현지 꿀팁, 간판·메시지 이해</td></tr>
+    <tr><td><strong>제주 이주/거주자</strong></td><td>생활 정보, 이웃·현지인 소통, 제주어 이해</td></tr>
+    <tr><td><strong>제주 문화·언어 관심층</strong></td><td>제주어 학습, 정서 표현 이해, 콘텐츠 제작</td></tr>
+  </tbody>
+</table>
+<h3>페르소나</h3>
+<table>
+  <thead><tr><th>페르소나</th><th>프로필</th><th>목표</th><th>불편(Pain)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>여행객 지민(26)</strong></td><td>서울 직장인, 3박4일 제주 첫 여행</td><td>효율적 동선으로 핵심 명소·맛집 둘러보기</td><td>앱·블로그를 오가며 정보 수집·일정 설계가 번거로움</td></tr>
+    <tr><td><strong>이주자 현우(34)</strong></td><td>1년 차 제주 이주, 카페 운영</td><td>현지 정보·이웃 소통, 손님의 제주어 이해</td><td>현지 꿀팁을 물어볼 곳이 마땅치 않음</td></tr>
+    <tr><td><strong>학습자 서연(22)</strong></td><td>제주 출신 대학생, 콘텐츠 제작 관심</td><td>할머니의 제주어 이해, 제주어 자막 제작</td><td>제주어 문장 단위 변환·정서 파악 도구 부재</td></tr>
+  </tbody>
+</table>
+
+<h3>사용 시나리오 (탭을 넘나드는 여정)</h3>
+
+<h4>시나리오 1 — 여행객 지민의 첫 제주 여행 (탭3 → 탭2 → 탭1)</h4>
+<blockquote>지민은 3박4일 일정을 짜야 한다.</blockquote>
+<ol>
+  <li><strong>탭3 (명소·체험)</strong>에서 가고 싶은 명소(성산일출봉, 카멜리아힐 등)와 체험(승마)을 지도에서 골라 다중 선택한다.</li>
+  <li><strong>AI 여행경로 생성</strong>을 누르고 "3박4일, 렌터카, 자연·포토 위주"를 입력하니, 일자별 동선이 지도에 폴리라인으로 그려진다.</li>
+  <li>점심 시간대가 비자, <strong>탭2 (맛집)</strong>으로 이동해 동선 근처 맛집을 검색하고 길찾기로 연결한다.</li>
+  <li>현지 식당 간판에서 본 "혼저 옵서예" 문구가 궁금해 <strong>탭1 (제주어)</strong>에 입력하니 "어서 오세요"로 번역된다.</li>
+</ol>
+
+<h4>시나리오 2 — 이주자 현우의 현지 정착 (탭4 → 탭1 → 탭4)</h4>
+<blockquote>현우는 카페 운영 중 궁금한 점을 해결하고 싶다.</blockquote>
+<ol>
+  <li><strong>탭4 (커뮤니티)</strong>에 Google 계정으로 로그인하고, "겨울철 제주 카페 손님이 줄 때 팁?"을 질문 글로 올린다.</li>
+  <li>단골 어르신이 남긴 제주어 메시지의 정서가 궁금해 <strong>탭1</strong>에 입력하니 번역과 함께 "🙂 행복(0.71) — 애정 어린 당부"로 분석된다.</li>
+  <li>다시 <strong>탭4 마이페이지</strong>에서 내가 쓴 글·받은 댓글을 확인하고, 유용한 꿀팁 글을 북마크한다.</li>
+</ol>
+
+<h4>시나리오 3 — 학습자 서연의 콘텐츠 제작 (탭1 → 탭4)</h4>
+<blockquote>서연은 제주어 자막 영상을 만든다.</blockquote>
+<ol>
+  <li><strong>탭1 (제주어)</strong> 방향 토글을 "표준어→제주어"로 두고 "어서 오세요, 천천히 구경하세요"를 입력해 "혼저 옵서, 놀멍 보멍 갑서" 자막 후보를 얻는다.</li>
+  <li>역방향(제주어→표준어)으로 다시 검수하고, 감정분석으로 정서 톤을 확인한다.</li>
+  <li><strong>탭4 (커뮤니티)</strong> 후기 게시판에 제작 과정과 결과물을 공유해 피드백을 받는다.</li>
+</ol>
+
+<!-- 5 -->
+<h2 id="s5"><span class="num">5</span>탭별 주요 기능 상세</h2>
+
+<h3>탭 1 — 제주어 (번역 + 감정)</h3>
+<ul>
+  <li><strong>양방향 번역:</strong> 입력창 + 방향 토글(제주어→표준어 / 표준어→제주어). 단일 KoBART 모델에 방향 prefix를 부여해 두 방향을 함께 처리.</li>
+  <li><strong>감정 분석(7종):</strong> 제주어 문장의 감정을 <strong>중립 · 슬픔 · 행복 · 분노 · 놀람 · 공포 · 혐오</strong> 7종으로 분류, 신뢰도(확률)를 함께 제시. 이모지·색상 뱃지와 신뢰도 막대로 직관적 표시(단정 대신 분포 제시).</li>
+  <li><strong>결과 카드:</strong> 번역문 + 감정 뱃지·신뢰도를 한 카드에 표시.</li>
+  <li><strong>graceful degradation:</strong> ML 미준비 시 "모델 학습 중" 안내(503).</li>
+  <li><strong>데이터 경로:</strong> Next 서버 라우트 <code>/api/translate</code>, <code>/api/emotion</code>이 FastAPI ML 서비스(<code>ML_SERVICE_URL</code>)를 프록시.</li>
+</ul>
+
+<h3>탭 2 — 맛집 (지도 · 길찾기)</h3>
+<ul>
+  <li><strong>지도 표시:</strong> 카카오 지도에 제주 맛집을 마커로 표시. 데이터 출처는 (a) Kakao Local 키워드/카테고리(FD6 음식점) 검색, (b) 큐레이션 seed JSON(<code>restaurants.seed.json</code>) 폴백.</li>
+  <li><strong>상세 정보:</strong> 마커 클릭 시 바텀시트에 이름/카테고리/주소/평점/사진(placeholder).</li>
+  <li><strong>길찾기:</strong> 카카오 지도 길찾기 링크로 연결.</li>
+  <li><strong>탐색:</strong> 지역·카테고리 필터, 키워드 검색.</li>
+</ul>
+
+<h3>탭 3 — 명소·체험 (지도 + AI 여행경로)</h3>
+<ul>
+  <li><strong>큐레이션:</strong> 명소/체험을 카테고리(자연/문화/체험/포토)로 큐레이션(seed JSON <code>attractions.seed.json</code>).</li>
+  <li><strong>지도·상세·길찾기:</strong> 마커 표시, 상세 바텀시트, 길찾기 링크.</li>
+  <li><strong>다중 선택(장바구니):</strong> 가고 싶은 장소를 여러 개 담기.</li>
+  <li><strong>AI 여행경로 생성:</strong> 선택 장소 + 사용자 조건(일수 / 이동수단 / 취향)을 서버 라우트 <code>/api/route</code>가 <strong>Claude API</strong>로 보내 일자별 동선 일정을 생성. 결과를 지도에 폴리라인으로 표시.</li>
+</ul>
+
+<h3>탭 4 — 커뮤니티 + 로그인 + 마이페이지</h3>
+<ul>
+  <li><strong>게시판:</strong> 카테고리(질문/꿀팁/후기). 목록·상세·작성·댓글·좋아요. <strong>작성/댓글은 로그인 필요.</strong></li>
+  <li><strong>인증:</strong> NextAuth.js (Google + Kakao provider). 세션은 DB(Prisma adapter)에 저장.</li>
+  <li><strong>마이페이지:</strong> 프로필(이름/이메일/아바타), 내 글·댓글, 좋아요·북마크, 로그아웃.</li>
+</ul>
+
+<!-- 6 -->
+<h2 id="s6"><span class="num">6</span>기술 개요</h2>
+<blockquote>상세 아키텍처·학습 절차·API 명세·데이터 모델은 <strong>개발설계서</strong>로 위임한다. 여기서는 개괄만 다룬다.</blockquote>
+<h3>기술 스택</h3>
+<table>
+  <thead><tr><th style="width:18%">영역</th><th style="width:38%">선택</th><th>이유</th></tr></thead>
+  <tbody>
+    <tr><td>프론트/앱</td><td><strong>Next.js 15 (App Router, TypeScript, Tailwind)</strong></td><td>모바일 반응형, SSR/API 라우트 일체화, 보유 경험</td></tr>
+    <tr><td>지도</td><td><strong>Kakao Maps JS SDK + Kakao Local REST API</strong></td><td>국내 장소/맛집/길찾기 최적</td></tr>
+    <tr><td>길찾기</td><td>Kakao Map 길찾기 링크 / (확장) Kakao Mobility API</td><td>키만으로 즉시</td></tr>
+    <tr><td>인증</td><td><strong>NextAuth.js (Google + Kakao)</strong></td><td>마이페이지·세션, OAuth 표준</td></tr>
+    <tr><td>DB</td><td><strong>Prisma + SQLite(dev) / PostgreSQL(prod)</strong></td><td>커뮤니티·유저, 마이그레이션 용이</td></tr>
+    <tr><td>AI 여행경로</td><td><strong>Anthropic Claude API</strong> (서버 라우트)</td><td>선택 명소 기반 일정 생성</td></tr>
+    <tr><td>ML(번역/감정)</td><td><strong>기존 FastAPI 서비스</strong> (KoBART + 감정 앙상블)</td><td>이미 구현된 Python 자산 재사용</td></tr>
+    <tr><td>상태/데이터</td><td>React Server Components + fetch, 필요시 SWR</td><td>단순성</td></tr>
+  </tbody>
+</table>
+<h3>시스템 구성 (개괄)</h3>
+<pre>[모바일 웹 브라우저] ── Next.js 15 (webapp/) ── 하단 4탭 네비
+   ├─ 탭1 제주어   → /api/translate · /api/emotion ─proxy→ [FastAPI ML]
+   ├─ 탭2 맛집     → Kakao Maps SDK + /api/places  ─→ [Kakao Local]
+   ├─ 탭3 명소·체험 → Kakao Maps + /api/route(AI)    ─→ [Claude API]
+   ├─ 탭4 커뮤니티  → /api/posts ...                 ─→ [Prisma/DB]
+   └─ /api/auth/*  → NextAuth (Google, Kakao)
+[FastAPI ML 서비스] 번역(KoBART) + 감정(Dual KR-BERT + KoELECTRA 앙상블)</pre>
+<h3>설계 원칙</h3>
+<ul>
+  <li><strong>서비스 분리:</strong> Next.js(웹앱·커뮤니티·인증·AI라우트)와 Python FastAPI(ML 추론)는 별도 프로세스. Next.js가 <code>ML_SERVICE_URL</code>로 ML을 호출.</li>
+  <li><strong>탭 독립성:</strong> 각 탭은 다른 탭 없이도 동작하도록 점진 구현·점진 출시.</li>
+  <li><strong>graceful degradation:</strong> 외부 키(Kakao/OAuth/Claude)·모델이 없으면 seed/mock·안내로 동작. 앱 자체는 키 없이도 기동·탐색 가능. <code>.env.example</code>로 키 명세.</li>
+</ul>
+
+<!-- 7 -->
+<h2 id="s7"><span class="num">7</span>기대 효과 및 활용 방안</h2>
+<h3>기대 효과</h3>
+<table>
+  <thead><tr><th style="width:22%">구분</th><th>효과</th></tr></thead>
+  <tbody>
+    <tr><td><strong>사용자 편익</strong></td><td>흩어진 제주 정보를 하나의 앱에서 — 이해·탐색·계획·소통까지 — 끊김 없이 해결</td></tr>
+    <tr><td><strong>문화적</strong></td><td>소멸위기 제주어의 디지털 접근성·학습성 제고, 세대 간 소통 지원</td></tr>
+    <tr><td><strong>기술적</strong></td><td>저자원 방언 NLP + 위치기반 서비스(LBS) + 생성형 AI 통합 실증 사례</td></tr>
+    <tr><td><strong>학술적</strong></td><td>TF-IDF(0.30) → 딥러닝 앙상블(0.84) 도약을 입증한 실증 결과의 제품화</td></tr>
+  </tbody>
+</table>
+<h3>활용 방안</h3>
+<ul>
+  <li><strong>여행 계획</strong> — 명소·맛집 탐색부터 AI 여행경로까지 한 앱에서 완결.</li>
+  <li><strong>교육</strong> — 제주어 학습 보조 도구, 표현·정서 학습 콘텐츠.</li>
+  <li><strong>관광/콘텐츠</strong> — 제주어 자막·안내문·홍보 문구 작성 및 검수.</li>
+  <li><strong>소통</strong> — 가족·지역 어른과의 메시지 이해, 커뮤니티 기반 현지 정보 교류.</li>
+  <li><strong>연구</strong> — 제주어 표현별 감정 분포 관찰, 방언 NLP 후속 연구의 베이스.</li>
+  <li><strong>확장 기반</strong> — PWA/네이티브, 결제·예약, 실시간 기능 등 향후 확장의 토대.</li>
+</ul>
+
+<!-- 8 -->
+<h2 id="s8"><span class="num">8</span>추진 일정</h2>
+<h3>전체 단계</h3>
+<table>
+  <thead><tr><th style="width:12%">단계</th><th style="width:14%">기간</th><th>내용</th><th>산출물</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1단계</strong></td><td>1학기</td><td>제주어 <strong>번역기 제안</strong> 및 데이터/접근 정의</td><td>번역기 제안서, 병렬 코퍼스 정리</td></tr>
+    <tr><td><strong>2단계</strong></td><td>2학기</td><td>제주어 <strong>감정분류</strong> 모델 개발 (KR-BERT → 앙상블)</td><td>F1-Macro 0.84 모델, 감정분류 보고서</td></tr>
+    <tr><td><strong>3단계</strong></td><td>통합기 (현재)</td><td>번역 학습 + 두 모델을 흡수한 <strong>올인원 앱 "탐라"</strong> 구축</td><td>4탭 웹앱, 기획서·개발설계서</td></tr>
+  </tbody>
+</table>
+<h3>통합기 세부 작업 순서</h3>
+<table>
+  <thead><tr><th style="width:8%">순서</th><th>작업</th><th style="width:12%">GPU</th><th style="width:18%">비고</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>문서화(기획서·개발설계서) + Next.js 앱 스캐폴드(<code>webapp/</code>)</td><td>비-GPU</td><td>병렬 진행</td></tr>
+    <tr><td>2</td><td>감정 모델 학습 완료 → F1 0.84 검증</td><td>GPU</td><td>진행 중 (직렬)</td></tr>
+    <tr><td>3</td><td>번역 KoBART 학습 → BLEU/chrF 평가</td><td>GPU</td><td>감정 학습 종료 후 (직렬)</td></tr>
+    <tr><td>4</td><td>탭별 기능 점진 구현(맵·커뮤니티·AI경로) + ML 연결</td><td>비-GPU</td><td>탭 독립 구현</td></tr>
+    <tr><td>5</td><td>end-to-end 데모 검증, 리포트·문서 갱신, 최종 발표 준비</td><td>비-GPU</td><td></td></tr>
+  </tbody>
+</table>
+<blockquote>GPU 작업(감정·번역 학습)은 단일 GPU 환경을 고려해 <strong>직렬 실행</strong>하며, 앱 개발(비-GPU)과 병렬로 진행한다.</blockquote>
+
+<!-- 9 -->
+<h2 id="s9"><span class="num">9</span>위험 요소 및 대응</h2>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:26%">위험 요소</th><th style="width:14%">영향</th><th>대응 방안</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><strong>외부 키 의존</strong> (Kakao / OAuth / Claude)</td><td>키 없으면 해당 탭 기능 제한</td><td>seed/mock 데이터·안내로 graceful degradation, <code>.env.example</code>로 키 명세, 앱은 키 없이도 기동</td></tr>
+    <tr><td>2</td><td><strong>범위 과대</strong> (4탭 동시 구현 부담)</td><td>일정 지연·미완성</td><td>탭별 독립·점진 구현·점진 출시. 각 탭은 다른 탭 없이도 동작</td></tr>
+    <tr><td>3</td><td><strong>ML 서비스 연동</strong> (Next ↔ FastAPI 별도 기동)</td><td>연동 실패</td><td>별도 프로세스로 분리, README에 두 프로세스 실행법 명시, 미준비 시 503 안내</td></tr>
+    <tr><td>4</td><td><strong>번역 학습 시간</strong> (127k×2 KoBART 학습이 단일 GPU에서 길어짐)</td><td>일정 지연</td><td>동적 패딩·batch 조정, 필요 시 데이터 부분집합 단계적 학습</td></tr>
+    <tr><td>5</td><td><strong>서빙 메모리</strong> (KR-BERT + KoELECTRA + KoBART 동시 로드, 16GB 한계)</td><td>추론 실패/지연</td><td>16GB 내 관리, 필요 시 지연 로드(lazy load)</td></tr>
+    <tr><td>6</td><td><strong>감정 모델 목표 미달</strong> (0.84 재현 지연)</td><td>성공 지표 미달</td><td>단계별 검증으로 조기 진단, Hard Mining·앙상블 α 튜닝</td></tr>
+    <tr><td>7</td><td><strong>AI 여행경로 품질</strong> (Claude 생성 일정의 동선 비현실성)</td><td>사용자 신뢰 저하</td><td>좌표·이동수단 제약을 프롬프트에 명시, 결과를 지도로 시각 검증, 사용자 편집 여지 제공</td></tr>
+  </tbody>
+</table>
+
+<div class="footer-note">
+  본 기획서는 마스터 설계 v2의 결정·수치·기능을 준수하며 이와 모순되지 않는다. 앱 이름은 "탐라(Tamna)"로 확정한다. 구현 세부는 개발설계서를 참조한다.
+</div>
+
+</div>
+</body>
+</html>
