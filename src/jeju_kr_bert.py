@@ -404,15 +404,15 @@ def run_step_single(step_name, data_path, text_column, encoder_name, hp, output_
         t0 = time.time()
         train_losses, train_correct, train_total = [], 0, 0
 
-        # Hard mining: 1st epoch normal, then re-weight top-20% loss
+        # Hard mining: 1st epoch normal, then oversample top-20% loss 샘플.
         if use_hard_mining and epoch > 1:
-            losses = _compute_per_sample_loss(model, train_loader, device, hp['label_smoothing'])
+            # loss는 반드시 shuffle=False 로더로 계산 — WeightedRandomSampler 의 가중치는
+            # 데이터셋 인덱스 순서로 해석되므로, losses[i] 가 dataset[i] 에 대응해야 함.
+            # (shuffle=True 로더로 계산하면 가중치가 엉뚱한 샘플에 붙어 hard mining 이 깨짐)
+            order_loader = DataLoader(train_ds, batch_size=hp['batch_size'],
+                                      shuffle=False, collate_fn=collate)
+            losses = _compute_per_sample_loss(model, order_loader, device, hp['label_smoothing'])
             weights = _hard_mining_weights(losses, top_pct=0.20, alpha=2.0)
-            # rebuild loader with custom weighted sampling? Easier: pass weights into train_step.
-            # We'll just inflate the loss of top-20% samples by alpha=2.0 each batch.
-            # Implementation: simple — track sample idx is hard with shuffle. Approximate:
-            #   compute weights per sample, then for each batch fetch corresponding weights.
-            # For simplicity, use WeightedRandomSampler that oversamples hard examples.
             from torch.utils.data import WeightedRandomSampler
             sample_w = torch.from_numpy(weights).double()
             sampler = WeightedRandomSampler(sample_w, num_samples=len(train_ds), replacement=True)
