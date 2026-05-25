@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제주어 챗봇 — 번역 &amp; 감정분석</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>🍊 제주어 챗봇</h1>
+      <p class="subtitle">제주어↔표준어 번역 &amp; 감정 분석</p>
+      <div id="status" class="status-bar" aria-live="polite"></div>
+    </header>
+
+    <main id="chat" class="chat" aria-live="polite">
+      <div class="msg msg-bot">
+        <div class="bubble">
+          안녕하수과! 제주어 문장을 입력하민 표준어로 옮기곡 감정을 알려드립주.
+          방향을 바꾸민 표준어를 제주어로도 바꿔드려마씸.
+        </div>
+      </div>
+    </main>
+
+    <form id="composer" class="composer" autocomplete="off">
+      <div class="direction-toggle" role="group" aria-label="번역 방향">
+        <button type="button" class="dir-btn active" data-dir="j2s">제주어 → 표준어</button>
+        <button type="button" class="dir-btn" data-dir="s2j">표준어 → 제주어</button>
+      </div>
+      <div class="input-row">
+        <input
+          id="input"
+          class="text-input"
+          type="text"
+          placeholder="문장을 입력하세요…"
+          aria-label="입력 문장"
+        />
+        <button id="send" class="send-btn" type="submit">전송</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

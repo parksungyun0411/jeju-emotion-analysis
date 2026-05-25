@@ -1,5 +1,15 @@
+# 데이터/라벨링
 openai>=1.0.0
 pandas>=1.5.0
 openpyxl>=3.0.0
 python-dotenv>=1.0.0
 requests>=2.25.0
+numpy>=1.24.0
+# 감정분류·번역 모델 (PyTorch + HuggingFace)
+torch>=2.2.0
+transformers>=4.40.0
+scikit-learn>=1.3.0
+sacrebleu>=2.3.0
+# 챗봇 백엔드
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
