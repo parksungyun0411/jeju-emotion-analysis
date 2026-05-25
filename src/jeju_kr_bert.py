@@ -37,6 +37,7 @@ import math
 import argparse
 import logging
 import random
+import contextlib
 from pathlib import Path
 from collections import Counter
 
@@ -52,7 +53,7 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report, con
 from transformers import (
     AutoTokenizer, AutoModel, AutoModelForSequenceClassification,
     AutoModelForMaskedLM, DataCollatorForLanguageModeling,
-    get_cosine_schedule_with_warmup,
+    DataCollatorWithPadding, get_cosine_schedule_with_warmup,
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -66,7 +67,7 @@ DEFAULT_HP = dict(
     lr=3e-5,
     batch_size=64,
     epochs=7,
-    max_length=80,
+    max_length=64,  # 토큰 최대 ~49, 동적 패딩이므로 truncation 상한만 의미
     dropout=0.2,
     weight_decay=0.01,
     warmup_ratio=0.20,
@@ -74,6 +75,17 @@ DEFAULT_HP = dict(
     grad_clip=1.0,
     seed=42,
 )
+
+
+# Mixed precision: main()에서 --fp16 시 torch.bfloat16 으로 설정
+AMP_DTYPE = None
+
+
+def amp_ctx(device):
+    """bf16 autocast 컨텍스트 (AMP_DTYPE None이면 no-op)."""
+    if AMP_DTYPE is None:
+        return contextlib.nullcontext()
+    return torch.autocast(device_type=device.type, dtype=AMP_DTYPE)
 
 
 def get_device():
@@ -109,56 +121,62 @@ def stratified_split_712(df, label_col='감정번호', seed=42):
 # ─── Datasets ──────────────────────────────────────────────────────────────
 
 class SingleTextDataset(Dataset):
-    """Single text input (제주어 또는 표준어) — Baseline, KoELECTRA, Hard Mining 단계용"""
-    def __init__(self, texts, labels, tokenizer, max_length=80):
-        self.texts = list(texts)
-        self.labels = list(labels)
-        self.tokenizer = tokenizer
-        self.max_length = max_length
+    """Single text input (제주어 또는 표준어) — Baseline, KoELECTRA, Hard Mining 단계용.
+
+    속도: 토큰화를 __init__에서 1회만 수행(에폭마다 재토큰화 X), 패딩은
+    collate에서 배치별 최댓값으로 동적 처리(고정 max_length 패딩 X)."""
+    def __init__(self, texts, labels, tokenizer, max_length=64):
+        enc = tokenizer([str(t) for t in texts], truncation=True, max_length=max_length)
+        self.input_ids = enc['input_ids']
+        self.attention_mask = enc['attention_mask']
+        self.labels = [int(l) for l in labels]
 
     def __len__(self):
-        return len(self.texts)
+        return len(self.labels)
 
     def __getitem__(self, idx):
-        enc = self.tokenizer(
-            self.texts[idx], truncation=True, padding='max_length',
-            max_length=self.max_length, return_tensors='pt'
-        )
         return {
-            'input_ids': enc['input_ids'].squeeze(0),
-            'attention_mask': enc['attention_mask'].squeeze(0),
-            'labels': torch.tensor(int(self.labels[idx]), dtype=torch.long),
+            'input_ids': self.input_ids[idx],
+            'attention_mask': self.attention_mask[idx],
+            'labels': self.labels[idx],
         }
 
 
 class DualTextDataset(Dataset):
-    """Dual text input (제주어 + 표준어) — Dual-Gated KR-BERT 단계용"""
-    def __init__(self, jeju_texts, std_texts, labels, tokenizer, max_length=80):
-        self.jeju = list(jeju_texts)
-        self.std = list(std_texts)
-        self.labels = list(labels)
-        self.tokenizer = tokenizer
-        self.max_length = max_length
+    """Dual text input (제주어 + 표준어) — Dual-Gated KR-BERT 단계용. 1회 토큰화 + 동적 패딩."""
+    def __init__(self, jeju_texts, std_texts, labels, tokenizer, max_length=64):
+        ej = tokenizer([str(t) for t in jeju_texts], truncation=True, max_length=max_length)
+        es = tokenizer([str(t) for t in std_texts], truncation=True, max_length=max_length)
+        self.jeju_ids, self.jeju_mask = ej['input_ids'], ej['attention_mask']
+        self.std_ids, self.std_mask = es['input_ids'], es['attention_mask']
+        self.labels = [int(l) for l in labels]
 
     def __len__(self):
-        return len(self.jeju)
+        return len(self.labels)
 
     def __getitem__(self, idx):
-        enc_j = self.tokenizer(
-            self.jeju[idx], truncation=True, padding='max_length',
-            max_length=self.max_length, return_tensors='pt'
-        )
-        enc_s = self.tokenizer(
-            self.std[idx], truncation=True, padding='max_length',
-            max_length=self.max_length, return_tensors='pt'
-        )
         return {
-            'jeju_ids': enc_j['input_ids'].squeeze(0),
-            'jeju_mask': enc_j['attention_mask'].squeeze(0),
-            'std_ids': enc_s['input_ids'].squeeze(0),
-            'std_mask': enc_s['attention_mask'].squeeze(0),
-            'labels': torch.tensor(int(self.labels[idx]), dtype=torch.long),
+            'jeju_ids': self.jeju_ids[idx], 'jeju_mask': self.jeju_mask[idx],
+            'std_ids': self.std_ids[idx], 'std_mask': self.std_mask[idx],
+            'labels': self.labels[idx],
         }
+
+
+def make_dual_collator(tokenizer):
+    """Dual 입력을 제주어/표준어 각각 배치 최댓값으로 동적 패딩."""
+    def collate(batch):
+        jeju = tokenizer.pad(
+            {'input_ids': [b['jeju_ids'] for b in batch],
+             'attention_mask': [b['jeju_mask'] for b in batch]}, return_tensors='pt')
+        std = tokenizer.pad(
+            {'input_ids': [b['std_ids'] for b in batch],
+             'attention_mask': [b['std_mask'] for b in batch]}, return_tensors='pt')
+        return {
+            'jeju_ids': jeju['input_ids'], 'jeju_mask': jeju['attention_mask'],
+            'std_ids': std['input_ids'], 'std_mask': std['attention_mask'],
+            'labels': torch.tensor([b['labels'] for b in batch], dtype=torch.long),
+        }
+    return collate
 
 
 # ─── Models ────────────────────────────────────────────────────────────────
@@ -207,8 +225,9 @@ def train_step_single(model, batch, optimizer, scheduler, device, label_smoothin
     ids = batch['input_ids'].to(device)
     mask = batch['attention_mask'].to(device)
     labels = batch['labels'].to(device)
-    outputs = model(input_ids=ids, attention_mask=mask)
-    logits = outputs.logits
+    with amp_ctx(device):
+        outputs = model(input_ids=ids, attention_mask=mask)
+        logits = outputs.logits
 
     if sample_weights is not None:
         w = sample_weights.to(device)
@@ -231,14 +250,15 @@ def train_step_single(model, batch, optimizer, scheduler, device, label_smoothin
 def train_step_dual(model, batch, optimizer, scheduler, device, label_smoothing, grad_clip):
     model.train()
     optimizer.zero_grad()
-    loss, logits, _ = model(
-        jeju_ids=batch['jeju_ids'].to(device),
-        jeju_mask=batch['jeju_mask'].to(device),
-        std_ids=batch['std_ids'].to(device),
-        std_mask=batch['std_mask'].to(device),
-        labels=batch['labels'].to(device),
-        label_smoothing=label_smoothing,
-    )
+    with amp_ctx(device):
+        loss, logits, _ = model(
+            jeju_ids=batch['jeju_ids'].to(device),
+            jeju_mask=batch['jeju_mask'].to(device),
+            std_ids=batch['std_ids'].to(device),
+            std_mask=batch['std_mask'].to(device),
+            labels=batch['labels'].to(device),
+            label_smoothing=label_smoothing,
+        )
     loss.backward()
     nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
     optimizer.step()
@@ -255,8 +275,9 @@ def evaluate_single(model, loader, device):
     for batch in loader:
         ids = batch['input_ids'].to(device)
         mask = batch['attention_mask'].to(device)
-        outputs = model(input_ids=ids, attention_mask=mask)
-        probs = F.softmax(outputs.logits, dim=-1)
+        with amp_ctx(device):
+            outputs = model(input_ids=ids, attention_mask=mask)
+        probs = F.softmax(outputs.logits.float(), dim=-1)
         preds = probs.argmax(-1)
         all_preds.extend(preds.cpu().numpy())
         all_labels.extend(batch['labels'].numpy())
@@ -270,14 +291,15 @@ def evaluate_dual(model, loader, device):
     model.eval()
     all_preds, all_labels, all_probs = [], [], []
     for batch in loader:
-        _, logits, _ = model(
-            jeju_ids=batch['jeju_ids'].to(device),
-            jeju_mask=batch['jeju_mask'].to(device),
-            std_ids=batch['std_ids'].to(device),
-            std_mask=batch['std_mask'].to(device),
-            labels=None,
-        )
-        probs = F.softmax(logits, dim=-1)
+        with amp_ctx(device):
+            _, logits, _ = model(
+                jeju_ids=batch['jeju_ids'].to(device),
+                jeju_mask=batch['jeju_mask'].to(device),
+                std_ids=batch['std_ids'].to(device),
+                std_mask=batch['std_mask'].to(device),
+                labels=None,
+            )
+        probs = F.softmax(logits.float(), dim=-1)
         preds = probs.argmax(-1)
         all_preds.extend(preds.cpu().numpy())
         all_labels.extend(batch['labels'].numpy())
@@ -342,7 +364,7 @@ def save_report(out_dir, name, hp, history, final_metrics, preds, labels, probs=
 # ─── Steps ─────────────────────────────────────────────────────────────────
 
 def run_step_single(step_name, data_path, text_column, encoder_name, hp, output_dir,
-                    use_hard_mining=False):
+                    use_hard_mining=False, limit=None):
     """단일 텍스트 BERT/KoELECTRA fine-tune"""
     device = get_device()
     set_seed(hp['seed'])
@@ -350,20 +372,26 @@ def run_step_single(step_name, data_path, text_column, encoder_name, hp, output_
 
     df = pd.read_excel(data_path)
     logger.info(f"  loaded {len(df):,} rows")
-    df = df.dropna(subset=[text_column, '감정번호']).reset_index(drop=True)
+    # 앙상블 정합성: dual 단계와 동일한 행 집합을 쓰도록 두 언어 컬럼 모두 NA 제거.
+    # (그래야 seed 고정 stratified split의 test set이 dual/single에서 일치)
+    df = df.dropna(subset=['제주어 문장', '표준어 문장', '감정번호']).reset_index(drop=True)
     df[text_column] = df[text_column].astype(str)
     df['감정번호'] = df['감정번호'].astype(int)
+    if limit:
+        df = df.sample(n=min(int(limit), len(df)), random_state=hp['seed']).reset_index(drop=True)
+        logger.info(f"  [SMOKE] subsampled to {len(df):,} rows")
 
     train_df, val_df, test_df = stratified_split_712(df, seed=hp['seed'])
     logger.info(f"  train={len(train_df):,}  val={len(val_df):,}  test={len(test_df):,}")
 
     tokenizer = AutoTokenizer.from_pretrained(encoder_name)
+    collate = DataCollatorWithPadding(tokenizer)
     train_ds = SingleTextDataset(train_df[text_column], train_df['감정번호'], tokenizer, hp['max_length'])
     val_ds = SingleTextDataset(val_df[text_column], val_df['감정번호'], tokenizer, hp['max_length'])
     test_ds = SingleTextDataset(test_df[text_column], test_df['감정번호'], tokenizer, hp['max_length'])
-    train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=hp['batch_size'], shuffle=False)
-    test_loader = DataLoader(test_ds, batch_size=hp['batch_size'], shuffle=False)
+    train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(val_ds, batch_size=hp['batch_size'], shuffle=False, collate_fn=collate)
+    test_loader = DataLoader(test_ds, batch_size=hp['batch_size'], shuffle=False, collate_fn=collate)
 
     model = AutoModelForSequenceClassification.from_pretrained(encoder_name, num_labels=NUM_LABELS)
     model.config.hidden_dropout_prob = hp['dropout']
@@ -388,7 +416,8 @@ def run_step_single(step_name, data_path, text_column, encoder_name, hp, output_
             from torch.utils.data import WeightedRandomSampler
             sample_w = torch.from_numpy(weights).double()
             sampler = WeightedRandomSampler(sample_w, num_samples=len(train_ds), replacement=True)
-            train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], sampler=sampler)
+            train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], sampler=sampler,
+                                      collate_fn=collate)
 
         for step, batch in enumerate(train_loader):
             loss, preds, labels = train_step_single(
@@ -436,8 +465,9 @@ def _compute_per_sample_loss(model, loader, device, label_smoothing):
         ids = batch['input_ids'].to(device)
         mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device)
-        logits = model(input_ids=ids, attention_mask=mask).logits
-        per = F.cross_entropy(logits, labels, label_smoothing=label_smoothing, reduction='none')
+        with amp_ctx(device):
+            logits = model(input_ids=ids, attention_mask=mask).logits
+        per = F.cross_entropy(logits.float(), labels, label_smoothing=label_smoothing, reduction='none')
         losses.extend(per.cpu().numpy().tolist())
     return np.array(losses)
 
@@ -450,7 +480,7 @@ def _hard_mining_weights(losses, top_pct=0.20, alpha=2.0):
     return w / w.sum() * len(w)
 
 
-def run_step_dual(step_name, data_path, encoder_name, hp, output_dir):
+def run_step_dual(step_name, data_path, encoder_name, hp, output_dir, limit=None):
     """Dual-Gated KR-BERT (Step 3)"""
     device = get_device()
     set_seed(hp['seed'])
@@ -462,17 +492,21 @@ def run_step_dual(step_name, data_path, encoder_name, hp, output_dir):
     df['표준어 문장'] = df['표준어 문장'].astype(str)
     df['감정번호'] = df['감정번호'].astype(int)
     logger.info(f"  loaded {len(df):,} rows")
+    if limit:
+        df = df.sample(n=min(int(limit), len(df)), random_state=hp['seed']).reset_index(drop=True)
+        logger.info(f"  [SMOKE] subsampled to {len(df):,} rows")
 
     train_df, val_df, test_df = stratified_split_712(df, seed=hp['seed'])
     logger.info(f"  train={len(train_df):,}  val={len(val_df):,}  test={len(test_df):,}")
 
     tokenizer = AutoTokenizer.from_pretrained(encoder_name)
+    collate = make_dual_collator(tokenizer)
     train_ds = DualTextDataset(train_df['제주어 문장'], train_df['표준어 문장'], train_df['감정번호'], tokenizer, hp['max_length'])
     val_ds = DualTextDataset(val_df['제주어 문장'], val_df['표준어 문장'], val_df['감정번호'], tokenizer, hp['max_length'])
     test_ds = DualTextDataset(test_df['제주어 문장'], test_df['표준어 문장'], test_df['감정번호'], tokenizer, hp['max_length'])
-    train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=hp['batch_size'], shuffle=False)
-    test_loader = DataLoader(test_ds, batch_size=hp['batch_size'], shuffle=False)
+    train_loader = DataLoader(train_ds, batch_size=hp['batch_size'], shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(val_ds, batch_size=hp['batch_size'], shuffle=False, collate_fn=collate)
+    test_loader = DataLoader(test_ds, batch_size=hp['batch_size'], shuffle=False, collate_fn=collate)
 
     model = DualGatedClassifier(encoder_name, num_labels=NUM_LABELS, dropout=hp['dropout']).to(device)
     optimizer, scheduler = make_optimizer_scheduler(model, train_loader, hp)
@@ -562,6 +596,10 @@ def main():
     parser.add_argument('--batch-size', type=int, default=DEFAULT_HP['batch_size'])
     parser.add_argument('--lr', type=float, default=DEFAULT_HP['lr'])
     parser.add_argument('--max-length', type=int, default=DEFAULT_HP['max_length'])
+    parser.add_argument('--limit', type=int, default=None,
+                        help="작은 부분집합만 사용 (스모크 테스트용)")
+    parser.add_argument('--fp16', action='store_true',
+                        help="bf16 mixed precision autocast (MPS/CUDA 가속)")
     # ensemble specific
     parser.add_argument('--dual-probs', default=None)
     parser.add_argument('--single-probs', default=None)
@@ -571,32 +609,42 @@ def main():
     hp.update(dict(epochs=args.epochs, batch_size=args.batch_size,
                    lr=args.lr, max_length=args.max_length))
 
+    global AMP_DTYPE
+    if args.fp16:
+        AMP_DTYPE = torch.bfloat16
+        logger.info("mixed precision: bfloat16 autocast 활성화")
+
     if args.step == 'baseline':
         # Step 1: KR-BERT 단일 (제주어 문장)
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
-        run_step_single('step1_baseline', args.data, '제주어 문장', encoder, hp, args.output_dir)
+        run_step_single('step1_baseline', args.data, '제주어 문장', encoder, hp, args.output_dir,
+                        limit=args.limit)
     elif args.step == 'balanced':
         # Step 2: 데이터는 이미 균형. baseline과 사실상 동일하지만 별도 이름.
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
-        run_step_single('step2_balanced', args.data, '제주어 문장', encoder, hp, args.output_dir)
+        run_step_single('step2_balanced', args.data, '제주어 문장', encoder, hp, args.output_dir,
+                        limit=args.limit)
     elif args.step == 'dual':
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
-        run_step_dual('step3_dual', args.data, encoder, hp, args.output_dir)
+        run_step_dual('step3_dual', args.data, encoder, hp, args.output_dir, limit=args.limit)
     elif args.step == 'tokenizer':
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
-        run_step_single('step4_tokenizer', args.data, '제주어 문장', encoder, hp, args.output_dir)
+        run_step_single('step4_tokenizer', args.data, '제주어 문장', encoder, hp, args.output_dir,
+                        limit=args.limit)
         # (실제 토크나이저 확장 로직은 후속 PR — 우선 같은 베이스로 epoch 늘려 학습)
     elif args.step == 'dapt':
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
-        run_step_single('step5_dapt', args.data, '제주어 문장', encoder, hp, args.output_dir)
+        run_step_single('step5_dapt', args.data, '제주어 문장', encoder, hp, args.output_dir,
+                        limit=args.limit)
     elif args.step == 'hard-mining':
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
         run_step_single('step6_hard_mining', args.data, '제주어 문장', encoder, hp, args.output_dir,
-                        use_hard_mining=True)
+                        use_hard_mining=True, limit=args.limit)
     elif args.step == 'koelectra':
         # Branch 1: Jeju-aware KoELECTRA
         encoder = args.encoder or 'monologg/koelectra-base-v3-discriminator'
-        run_step_single('branch1_koelectra', args.data, '제주어 문장', encoder, hp, args.output_dir)
+        run_step_single('branch1_koelectra', args.data, '제주어 문장', encoder, hp, args.output_dir,
+                        limit=args.limit)
     elif args.step == 'ensemble':
         assert args.dual_probs and args.single_probs, "--dual-probs and --single-probs required"
         run_step_ensemble('step7_ensemble', args.dual_probs, args.single_probs, args.output_dir)
