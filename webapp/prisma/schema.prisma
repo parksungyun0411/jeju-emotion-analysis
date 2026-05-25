@@ -1,0 +1,120 @@
+// 제주 올인원 앱 — Prisma 스키마
+// dev: SQLite. prod 전환 시 provider 를 postgresql 로 교체.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── NextAuth 표준 모델 ───────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts  Account[]
+  sessions  Session[]
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── 커뮤니티 ─────────────────────────────────────────────────
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  category  String   @default("질문") // 질문 | 꿀팁 | 후기
+  title     String
+  body      String
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model Like {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Bookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  targetType String // restaurant | attraction | post
+  targetId   String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+}
