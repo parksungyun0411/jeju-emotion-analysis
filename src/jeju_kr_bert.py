@@ -453,6 +453,11 @@ def run_step_single(step_name, data_path, text_column, encoder_name, hp, output_
         output_dir, step_name, hp, history, test_metrics, preds, labels, probs,
         tokenizer_name=encoder_name, encoder_name=encoder_name,
     )
+    # 챗봇 서빙용으로 모델+토크나이저 저장 (앙상블 추론 시 KoELECTRA/KR-BERT 로드).
+    model_dir = Path(output_dir) / f"{step_name}_model"
+    model.save_pretrained(model_dir)
+    tokenizer.save_pretrained(model_dir)
+    logger.info(f"  saved model → {model_dir}")
     return test_metrics
 
 
