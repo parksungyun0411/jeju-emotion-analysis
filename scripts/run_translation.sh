@@ -37,3 +37,8 @@ if [ -f "$REPORT" ]; then
 else
   banner "report 없음 ($REPORT) — 학습 실패 가능"
 fi
+
+# 목표 자동 판정: overall chrF >= 80 (verify_translation.py, exit 0/1)
+banner "verify_translation (목표 chrF>=80)"
+python3 src/translation/verify_translation.py \
+    --results-dir "$OUT" --target-chrf 80 --tol 1.0 2>&1 | tee -a "$LOG"
