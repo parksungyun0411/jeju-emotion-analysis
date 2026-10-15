@@ -19,6 +19,8 @@ env/
 .DS_Store
 
 # Data
+# AI Hub 코퍼스에서 만든 사전: build_dictionary.py로 로컬에서만 생성하고 커밋하지 않는다
+src/translation/data/jeju_std_dict.json
 *.xlsx
 *.xls
 *.csv
