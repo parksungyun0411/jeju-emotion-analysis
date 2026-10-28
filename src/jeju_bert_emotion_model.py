@@ -26,7 +26,9 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-# 1=행복, 2=슬픔: 학습 파일의 감정번호×gpt감정 교차표 기준. 2026-10 이전 판은 1·2가 반대였다.
+# 1=행복, 2=슬픔: 이 스크립트가 읽는 최종데이터*.xlsx는 남아 있지 않아 확인하지 못했다.
+# 최종 학습 파일(merged)의 교차표와 감정별 문장 수로 보아 같은 대응일 가능성이 높다.
+# 2026-10 이전 판은 1·2가 반대였다.
 EMOTION_LABELS = {0: "중립", 1: "행복", 2: "슬픔", 3: "분노", 4: "놀람", 5: "공포", 6: "혐오"}
 NUM_LABELS = len(EMOTION_LABELS)
 
