@@ -15,7 +15,7 @@ CLI:
   python3 src/translation/train_translation.py --epochs 5 --fp16
   python3 src/translation/train_translation.py --direction j2s --limit 2000  (스모크)
 
-⚠️ 단일 GPU(MPS)는 감정 goal run 과 직렬. 감정 학습 종료 후 실행.
+단일 GPU(MPS)는 감정 goal run 과 직렬. 감정 학습 종료 후 실행.
 """
 import os
 import time
@@ -94,7 +94,11 @@ def set_seed(seed):
 
 
 def split_811(df, seed=42):
-    """8:1:1 → Train/Val/Test (번역은 감정과 분할 정합성 불필요)."""
+    """8:1:1 → Train/Val/Test (번역은 감정과 분할 정합성 불필요).
+
+    행 단위 분할이라 같은 문장쌍이 train과 test에 함께 들어갈 수 있다. 이 분할로 낸
+    BLEU·chrF는 새 문장에 대한 번역 성능보다 높게 나온다.
+    """
     train_val, test = train_test_split(df, test_size=0.1, random_state=seed)
     # 8:1 → val is 1/9 of train_val
     train, val = train_test_split(train_val, test_size=1/9, random_state=seed)

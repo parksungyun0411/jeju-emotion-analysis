@@ -5,6 +5,10 @@
 가중치 단순체(simplex, 합=1) 위를 그리드 탐색해 F1-Macro 최대 조합을 찾는다.
 2-way 그리드의 일반화 — 가중치 0이면 해당 모델 제외이므로 부분조합도 모두 포함한다.
 
+주의: 입력 npz는 test 분할의 확률이고, 가중치도 같은 test에서 고른다. 그래서
+여기서 나오는 F1은 낙관적인 값이다. 데이터가 행 단위 분할이면 test 문장의 상당수가
+train에도 있다(README의 "먼저 읽을 것" 참고).
+
 사용:
   python3 src/ensemble_search.py \
     --probs results_kr_bert/step3_dual_probs.npz \
@@ -72,7 +76,7 @@ def main():
     wstr = ", ".join(f"{nm}={wi:.2f}" for nm, wi in zip(names, w))
     print(f"\n최적 가중치: {wstr}")
     print(f"  Ensemble  acc={acc:.4f}  F1-Macro={f1m:.4f}")
-    print(f"  발표본 목표 0.8404 {'✅ 돌파' if f1m >= 0.8404 else ('≈ 도달(±1%)' if f1m >= 0.8304 else '미달')}")
+    print(f"  발표 수치 0.8404 대비 {f1m - 0.8404:+.4f} (test에서 고른 가중치 기준)")
 
     out = Path(args.output_dir) / f"{args.name}_report.txt"
     out.parent.mkdir(parents=True, exist_ok=True)
