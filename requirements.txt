@@ -1,8 +1,6 @@
-# 데이터/라벨링
-openai>=1.0.0
+# 데이터/라벨링 (GPT-4o 호출은 requests로 직접 한다)
 pandas>=1.5.0
 openpyxl>=3.0.0
-python-dotenv>=1.0.0
 requests>=2.25.0
 numpy>=1.24.0
 # 감정분류·번역 모델 (PyTorch + HuggingFace)
