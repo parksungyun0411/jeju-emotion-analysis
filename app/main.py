@@ -1,6 +1,6 @@
 """제주어 챗봇 FastAPI 백엔드.
 
-설계 문서 §4 (서브시스템 C) 기준. 번역 + 감정 분석을 REST 로 노출하고
+docs/개발설계서.md §4(ML 서비스 설계) 기준. 번역 + 감정 분석을 REST 로 노출하고
 정적 프론트를 서빙한다.
 
 graceful degradation:
@@ -61,6 +61,9 @@ class TranslateResponse(BaseModel):
 
 class EmotionRequest(BaseModel):
     text: str = Field(..., description="감정을 분석할 제주어 문장")
+    std_text: Optional[str] = Field(
+        None, description="같은 뜻의 표준어 문장. 없으면 Dual KR-BERT 표준어 슬롯에 제주어 문장을 넣는다",
+    )
 
 
 class EmotionResponse(BaseModel):
@@ -110,7 +113,7 @@ def translate(req: TranslateRequest) -> TranslateResponse:
 @app.post("/api/emotion", response_model=EmotionResponse)
 def emotion(req: EmotionRequest) -> EmotionResponse:
     try:
-        result = emotion_service.predict(req.text)
+        result = emotion_service.predict(req.text, req.std_text)
     except EmotionUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except ValueError as exc:
@@ -140,7 +143,8 @@ def chat(req: ChatRequest) -> ChatResponse:
     emotion_payload: Optional[EmotionResponse] = None
     if direction == "j2s":
         try:
-            emotion_payload = EmotionResponse(**emotion_service.predict(req.text))
+            # 번역 결과(표준어)를 Dual KR-BERT의 표준어 슬롯에 넣는다.
+            emotion_payload = EmotionResponse(**emotion_service.predict(req.text, translation))
         except (EmotionUnavailableError, ValueError):
             emotion_payload = None
 

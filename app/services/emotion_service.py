@@ -1,8 +1,8 @@
 """감정 분석 추론 서비스.
 
-설계 문서 §4 (서브시스템 C) / §5 (모델 아티팩트) 기준.
+docs/개발설계서.md §4.3(감정 앙상블) 기준.
 
-앙상블 구조 (jeju_kr_bert.py 발표본 명세 그대로):
+앙상블 구조 (src/jeju_kr_bert.py 재현 코드와 같음):
   p_ens = α · p_dual + (1 - α) · p_single
   - p_dual   : Dual-Gated KR-BERT (state_dict `step3_dual_state.pt`)
   - p_single : KoELECTRA (`branch1_koelectra_model/` 디렉토리, save_pretrained)
@@ -23,9 +23,9 @@ from typing import Dict, Optional
 
 
 # 감정 라벨 — jeju_kr_bert.EMOTION_LABELS 와 1:1 일치해야 함 (앙상블 컬럼 순서 동일).
-#   0 중립 / 1 슬픔 / 2 행복 / 3 분노 / 4 놀람 / 5 공포 / 6 혐오
+#   0 중립 / 1 행복 / 2 슬픔 / 3 분노 / 4 놀람 / 5 공포 / 6 혐오
 EMOTION_LABELS: Dict[int, str] = {
-    0: "중립", 1: "슬픔", 2: "행복", 3: "분노", 4: "놀람", 5: "공포", 6: "혐오",
+    0: "중립", 1: "행복", 2: "슬픔", 3: "분노", 4: "놀람", 5: "공포", 6: "혐오",
 }
 NUM_LABELS = len(EMOTION_LABELS)
 
@@ -187,8 +187,12 @@ class EmotionService:
         self._loaded = True
 
     # ── 추론 ──────────────────────────────────────────────────────────────
-    def predict(self, text: str) -> Dict[str, object]:
+    def predict(self, text: str, std_text: Optional[str] = None) -> Dict[str, object]:
         """제주어 문장의 감정을 앙상블 추론.
+
+        Dual KR-BERT는 학습 때 표준어 슬롯에 사람이 쓴 표준어 문장을 받았다.
+        std_text(번역 결과 등)가 있으면 그것을 표준어 슬롯에 넣고, 없으면 제주어 문장을
+        그대로 넣는다. 어느 쪽이든 학습 조건과 달라 README의 test 점수는 앱 결과에 적용되지 않는다.
 
         Returns
         -------
@@ -205,15 +209,22 @@ class EmotionService:
         text = str(text).strip()
 
         with torch.no_grad():
-            # Dual KR-BERT: 제주어/표준어 두 입력을 받지만 추론 시 표준어 번역이
-            # 없으므로 동일 텍스트를 양쪽에 넣는다 (게이트가 자체 조정).
+            # Dual KR-BERT: 표준어 슬롯에는 std_text, 없으면 제주어 문장을 넣는다.
             enc = self._dual_tokenizer(
                 text, truncation=True, max_length=MAX_LENGTH, return_tensors="pt",
             )
             ids = enc["input_ids"].to(self._device)
             mask = enc["attention_mask"].to(self._device)
+            std_ids, std_mask = ids, mask
+            if std_text and str(std_text).strip():
+                enc_s = self._dual_tokenizer(
+                    str(std_text).strip(), truncation=True, max_length=MAX_LENGTH,
+                    return_tensors="pt",
+                )
+                std_ids = enc_s["input_ids"].to(self._device)
+                std_mask = enc_s["attention_mask"].to(self._device)
             _, dual_logits, _ = self._dual_model(
-                jeju_ids=ids, jeju_mask=mask, std_ids=ids, std_mask=mask, labels=None,
+                jeju_ids=ids, jeju_mask=mask, std_ids=std_ids, std_mask=std_mask, labels=None,
             )
             p_dual = F.softmax(dual_logits.float(), dim=-1)
 

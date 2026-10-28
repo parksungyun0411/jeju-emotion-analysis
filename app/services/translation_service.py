@@ -1,6 +1,6 @@
 """제주어↔표준어 번역 추론 서비스.
 
-설계 문서 §3 (서브시스템 B) / §4 기준.
+docs/개발설계서.md §4.2(번역 모델) 기준.
 
 KoBART 양방향 단일 모델 (방향 prefix). 추론 래퍼는 `src/translation/translate.py`
 의 `Translator` 클래스를 재사용한다 (`translate(text, direction)`).

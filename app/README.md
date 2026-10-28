@@ -3,7 +3,9 @@
 제주어↔표준어 **번역**과 제주어 **감정 분석**을 하나의 채팅 UI로 제공하는
 FastAPI 백엔드 + 순수 정적 프론트엔드.
 
-설계 근거: `docs/superpowers/specs/2026-05-25-jeju-chatbot-design.md` §4, §5.
+졸업 뒤(2026년 5월) 개인적으로 덧붙인 확장 코드다. 학습된 모델 가중치는 저장소에 없어
+그대로는 503 안내만 나온다. 저장소 README의 test 점수는 이 앱의 출력에 적용되지 않는다
+(아래 "감정 앙상블" 참고).
 
 ## 구조
 
@@ -57,8 +59,9 @@ pip install -r requirements.txt
 p_ens = α · p_dual + (1 - α) · p_single
 ```
 
-- `p_dual`: Dual-Gated KR-BERT. 추론 시 표준어 번역 입력이 없으므로 제주어 문장을
-  제주어/표준어 양쪽 슬롯에 동일하게 넣는다 (게이트가 자체 조정).
+- `p_dual`: Dual-Gated KR-BERT. 학습 때는 표준어 슬롯에 사람이 쓴 표준어 문장을 받았다.
+  `/api/chat`은 번역 결과를, `/api/emotion`은 `std_text`를 표준어 슬롯에 넣고, 둘 다 없으면
+  제주어 문장을 양쪽 슬롯에 넣는다. 어느 경우든 학습 조건과 다르다.
 - `p_single`: KoELECTRA.
 - `α`: `step7_ensemble_report.txt` 에서 파싱. 파일이 없으면 0.5.
 
@@ -71,14 +74,15 @@ p_ens = α · p_dual + (1 - α) · p_single
 |--------|------|------|------|
 | GET  | `/api/health`    | — | 각 서비스 `available`/상세 상태 |
 | POST | `/api/translate` | `{text, direction:"j2s"\|"s2j"}` | `{translation}` (unavailable → 503) |
-| POST | `/api/emotion`   | `{text}` | `{label, label_id, scores}` (unavailable → 503) |
+| POST | `/api/emotion`   | `{text, std_text?}` | `{label, label_id, scores}` (unavailable → 503) |
 | POST | `/api/chat`      | `{text, direction?}` | j2s(기본): `{translation, emotion}` 동시 / s2j: 번역만 |
 | GET  | `/`              | — | 채팅 UI (`static/index.html`) |
 
 `/api/chat` 의 감정 분석은 `direction="j2s"` 일 때만 수행하며, 감정 모델이
 unavailable 이어도 번역 결과는 반환한다 (감정 필드만 `null`).
 
-## 감정 라벨 / 이모지
+## 감정 라벨
 
-`0 중립😐 / 1 슬픔😢 / 2 행복😊 / 3 분노😠 / 4 놀람😮 / 5 공포😱 / 6 혐오🤢`
-(순서는 `jeju_kr_bert.EMOTION_LABELS` 와 일치.)
+`0 중립 / 1 행복 / 2 슬픔 / 3 분노 / 4 놀람 / 5 공포 / 6 혐오`
+(순서는 `jeju_kr_bert.EMOTION_LABELS` 와 일치. 학습 파일의 감정번호×gpt감정 교차표 기준이며,
+2026-10 이전 판은 1·2 이름이 뒤바뀌어 있었다.)
