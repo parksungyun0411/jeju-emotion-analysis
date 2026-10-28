@@ -1,3 +1,4 @@
-# OpenAI API 설정 (템플릿)
-# 실제 사용 시 본 파일에 직접 키를 넣지 말고, .env 또는 환경변수를 사용하세요.
-OPENAI_API_KEY = "your_api_key_here"
+# OpenAI API 설정. 키는 이 파일에 적지 않고 환경변수 OPENAI_API_KEY로 넘긴다.
+import os
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")

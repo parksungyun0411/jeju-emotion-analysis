@@ -4,14 +4,14 @@ import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import type { EmotionResult, TranslateDirection } from "@/lib/types";
 
-// 감정 라벨 → 색/이모지 매핑 (7종 가정, 미지정 라벨은 기본값).
+// 감정 라벨 → 색/이모지 매핑 (ML 서비스 EMOTION_LABELS 7종, 미지정 라벨은 기본값).
 const EMOTION_STYLE: Record<string, { color: string; emoji: string }> = {
-  기쁨: { color: "bg-amber-100 text-amber-800", emoji: "😊" },
+  행복: { color: "bg-amber-100 text-amber-800", emoji: "😊" },
   슬픔: { color: "bg-blue-100 text-blue-800", emoji: "😢" },
   분노: { color: "bg-red-100 text-red-800", emoji: "😠" },
-  불안: { color: "bg-purple-100 text-purple-800", emoji: "😟" },
-  당황: { color: "bg-orange-100 text-orange-800", emoji: "😳" },
-  상처: { color: "bg-rose-100 text-rose-800", emoji: "💔" },
+  공포: { color: "bg-purple-100 text-purple-800", emoji: "😱" },
+  놀람: { color: "bg-orange-100 text-orange-800", emoji: "😮" },
+  혐오: { color: "bg-rose-100 text-rose-800", emoji: "🤢" },
   중립: { color: "bg-slate-100 text-slate-700", emoji: "😐" },
 };
 

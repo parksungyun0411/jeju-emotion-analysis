@@ -52,10 +52,11 @@ def analyze_emotion_performance(df, text_column, dataset_name, text_type):
     )
     
     # 감정 라벨
+    # 1=행복, 2=슬픔: 학습 파일의 감정번호×gpt감정 교차표 기준. 2026-10 이전 판은 1·2가 반대였다.
     emotion_labels = {
         0: "중립",
-        1: "슬픔", 
-        2: "행복",
+        1: "행복",
+        2: "슬픔",
         3: "분노",
         4: "놀람",
         5: "공포",
@@ -145,7 +146,7 @@ def save_detailed_results(jeju_results, standard_results):
                 
                 report = result['classification_report']
                 emotion_labels = {
-                    0: "중립", 1: "슬픔", 2: "행복", 3: "분노", 
+                    0: "중립", 1: "행복", 2: "슬픔", 3: "분노", 
                     4: "놀람", 5: "공포", 6: "혐오"
                 }
                 
@@ -185,7 +186,7 @@ def save_detailed_results(jeju_results, standard_results):
                 
                 report = result['classification_report']
                 emotion_labels = {
-                    0: "중립", 1: "슬픔", 2: "행복", 3: "분노", 
+                    0: "중립", 1: "행복", 2: "슬픔", 3: "분노", 
                     4: "놀람", 5: "공포", 6: "혐오"
                 }
                 

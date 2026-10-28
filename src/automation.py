@@ -19,7 +19,7 @@ class JejuEmotionClassifier:
         제주도 감정 분류 자동화 클래스
         
         Args:
-            api_key: OpenAI API 키 (config.py에서 자동으로 가져옴)
+            api_key: OpenAI API 키 (없으면 config.py가 환경변수 OPENAI_API_KEY에서 읽음)
         """
         # API 키 설정
         if api_key:
@@ -33,13 +33,16 @@ class JejuEmotionClassifier:
                 self.api_key = None
             
             if not self.api_key:
-                raise ValueError("OpenAI API 키가 필요합니다. config.py 파일에 OPENAI_API_KEY를 설정해주세요.")
+                raise ValueError("OpenAI API 키가 필요합니다. 환경변수 OPENAI_API_KEY를 설정해주세요.")
         
         # 감정 분류 카테고리 (7가지)
+        # 최종 학습 파일(merged_jeju_balanced_sorted.xlsx)의 감정번호×gpt감정 교차표에 맞춘 번호다.
+        # 2026-10 이전 판은 1=슬픔, 2=행복으로 적혀 있어 최종 파일과 1·2가 반대였다.
+        # API 호출이나 응답 해석에 실패한 행은 중립이 아니라 -1(분류실패)로 남긴다.
         self.emotions = {
             0: "중립",
-            1: "슬픔", 
-            2: "행복",
+            1: "행복",
+            2: "슬픔",
             3: "분노",
             4: "놀람",
             5: "공포",
@@ -66,8 +69,8 @@ class JejuEmotionClassifier:
 
 감정 분류 기준:
 0: 중립 - 완전히 감정이 없는 객관적 사실 서술, 단순 정보 전달만
-1: 슬픔 - 우울, 아쉬움, 실망, 좌절, 그리움, 외로움, 비애
-2: 행복 - 즐거움, 기쁨, 만족, 흥미, 희망, 긍정적 기대, 만족감
+1: 행복 - 즐거움, 기쁨, 만족, 흥미, 희망, 긍정적 기대, 만족감
+2: 슬픔 - 우울, 아쉬움, 실망, 좌절, 그리움, 외로움, 비애
 3: 분노 - 화남, 짜증, 불만, 적대감, 공격적 의도, 격분
 4: 놀람 - 깜짝, 당황, 신기함, 예상 밖의 상황, 충격, 경이로움
 5: 공포 - 무서움, 두려움, 불안, 걱정, 위협감, 불안정감
@@ -78,8 +81,8 @@ class JejuEmotionClassifier:
 중요한 분류 원칙:
 - 중립(0)은 정말 감정이 전혀 없는 경우에만 사용하세요
 - 미묘한 감정이라도 있으면 해당 감정으로 분류하세요
-- 긍정적인 내용은 행복(2)으로 분류하세요
-- 부정적인 내용은 슬픔(1)으로 분류하세요
+- 긍정적인 내용은 행복(1)으로 분류하세요
+- 부정적인 내용은 슬픔(2)으로 분류하세요
 - 텍스트의 톤, 어조, 단어 선택을 세심하게 분석하세요
 - 한국어의 뉘앙스와 문화적 맥락을 고려하세요
 
@@ -113,19 +116,19 @@ class JejuEmotionClassifier:
                 
                 # 유효한 범위인지 확인
                 if emotion_num not in self.emotions:
-                    logger.warning(f"예상치 못한 감정 번호: {emotion_num}, 중립으로 설정")
-                    emotion_num = 0
+                    logger.warning(f"예상치 못한 감정 번호: {emotion_num}, 분류 실패로 기록")
+                    return -1, "분류실패"
                 
                 emotion_name = self.emotions[emotion_num]
                 
                 return emotion_num, emotion_name
             else:
                 logger.error(f"API 호출 실패: {response.status_code} - {response.text}")
-                return 0, "중립"
+                return -1, "분류실패"
             
         except Exception as e:
             logger.error(f"감정 분류 중 오류 발생: {e}")
-            return 0, "중립"
+            return -1, "분류실패"
     
     def process_excel_file(self, input_file: str, output_file: str = None, start_row: int = 0, end_row: int = None):
         """
@@ -160,8 +163,8 @@ class JejuEmotionClassifier:
         logger.info(f"처리할 행 범위: {start_row}번째부터 {end_row-1}번째까지 ({len(df)}행)")
         
         # 감정 분류 컬럼 초기화
-        df['감정번호'] = 0
-        df['gpt감정'] = '중립'
+        df['감정번호'] = -1
+        df['gpt감정'] = '미분류'
         
         # 각 행에 대해 감정 분류 수행
         processed_count = 0
@@ -258,10 +261,10 @@ def main():
         try:
             from config import OPENAI_API_KEY
             if not OPENAI_API_KEY:
-                print("config.py 파일에 OPENAI_API_KEY를 설정해주세요.")
+                print("환경변수 OPENAI_API_KEY를 설정해주세요.")
                 return
         except ImportError:
-            print("config.py 파일을 찾을 수 없습니다. config.py 파일을 생성하고 OPENAI_API_KEY를 설정해주세요.")
+            print("src/config.py를 찾을 수 없습니다. src 폴더에서 실행해주세요.")
             return
         
         # 입력 파일 경로
