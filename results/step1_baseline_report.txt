@@ -1,3 +1,14 @@
+[정정 메모, 2026-10 추가. 아래 원 출력은 고치지 않았다]
+- 감정 이름: 이 출력은 1=슬픔, 2=행복으로 이름 붙인 코드로 만들었다. 학습 파일의
+  감정번호×gpt감정 교차표로는 1=행복, 2=슬픔이므로 아래 표의 '슬픔' 행·열은 행복,
+  '행복' 행·열은 슬픔이다. 행복 F1은 0.7601, 슬픔 F1은 0.6020이다. 전체 점수(Accuracy,
+  F1-Macro, F1-Weighted)는 번호로 계산해 바뀌지 않는다.
+- 분할: 행 단위 7:1:2라 test 행의 70.4%가 train에도 있는 문장이다(공포 100%, 혐오 99.8%,
+  놀람 98.7%, 중립 11.2%). 공포·혐오·놀람의 높은 F1은 이 겹침의 영향이 크고, 이 점수는
+  일반화 성능이 아니다. 진단은 https://github.com/parksungyun0411/jeju-emotion-lora 의
+  reports/leakage.md에 있다.
+- 설정: 2 epoch, batch 32로 돌린 빠른 확인용 실행이다.
+
 == step1_baseline ==
 Tokenizer: snunlp/KR-BERT-char16424
 Encoder:   snunlp/KR-BERT-char16424
