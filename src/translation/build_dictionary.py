@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 JEJU_COL = "제주어 문장"
 STD_COL = "표준어 문장"
 
-DEFAULT_DATA = "../2학기_감정분류/merged_jeju_balanced_sorted.xlsx"
+DEFAULT_DATA = "merged_jeju_balanced_sorted.xlsx"
 DEFAULT_OUT = "src/translation/data/jeju_std_dict.json"
 
 # 어절 끝 구두점만 분리하기 위한 정규화: 양끝의 . , ? ! 등을 떼어 비교 노이즈를 줄인다.

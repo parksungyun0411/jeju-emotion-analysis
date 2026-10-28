@@ -1,33 +1,39 @@
 """
-제주어 감정 분류 — 발표본 명세 그대로 구현
+제주어 감정 분류 재현 코드
 
-발표본 (최종발표_제주어감정분석.pptx) 단계별 성능:
-  Step 1: KR-BERT 베이스라인 (전처리 없음)       Test F1 = 0.4733
-  Step 2: + 데이터 밸런싱 (오버샘플링)            Test F1 = 0.5833
-  Step 3: + Dual Stream (KR-BERT 듀얼 + 게이팅)   Test F1 = 0.6158
-  Step 4: + 토크나이저 최적화 (제주어 토큰 추가)  Test F1 = 0.7184
-  Step 5: + DAPT (제주어 MLM 재학습)              Test F1 = 0.7456
-  Step 6: + Hard Mining (loss 상위 20% 가중치)    Test F1 = 0.8003
-  Step 7: + 앙상블 (KoELECTRA + Dual KR-BERT)     Test F1 = 0.8404 (최종)
+발표 때 점수를 만든 원 코드는 남아 있지 않다. 이 파일은 졸업 뒤(2026년 5월) 최종 발표 자료
+(최종발표_제주어감정분석.pptx)의 구조와 하이퍼파라미터를 보고 다시 짠 코드다.
 
-데이터: merged_jeju_balanced_sorted.xlsx (127,324행, 7클래스 거의 균형)
-분할: Stratified 7:1:2 (Train/Val/Test)
+발표 자료의 단계별 Test F1-Macro와 이 파일의 구현 상태:
+  Step 1: KR-BERT 베이스라인                 0.4733  구현
+  Step 2: + 데이터 밸런싱                     0.5833  baseline과 같은 동작 (데이터가 이미 균형)
+  Step 3: + Dual-Gated KR-BERT              0.6158  구현
+  Step 4: + 토크나이저 최적화                 0.7184  미구현 (baseline과 같은 동작)
+  Step 5: + DAPT (MLM 재학습)                0.7456  미구현 (baseline과 같은 동작)
+  Step 6: + Hard Mining                     0.8003  구현, 최종 앙상블에는 쓰지 않음
+  Step 7: 앙상블 (KoELECTRA + Dual KR-BERT)  0.8404  구현
+발표 자료의 'Noise filtering(신뢰도 하위 30% 제거)'도 구현하지 않았다.
 
-하이퍼파라미터 (발표본 슬라이드 18):
-  LR 3e-5, Batch 64, Epoch 7, Max length 80
-  AdamW (weight_decay 0.01), Warmup 20%, Cosine scheduler
-  Dropout 0.2, Label smoothing 0.05, Grad clip 1.0
-  Noise filtering: confidence bottom 30% 제거
+데이터: merged_jeju_balanced_sorted.xlsx (127,324행). 감정별 행 수를 맞추려고 같은 문장을
+여러 번 복제한 파일이다.
+분할: 행 단위 Stratified 7:1:2. 복제된 문장이 train과 test에 함께 들어가 test 행의 70.4%가
+train에도 있는 문장이다. 이 분할의 점수는 일반화 성능이 아니다
+(진단: https://github.com/parksungyun0411/jeju-emotion-lora 의 reports/leakage.md).
+앙상블 α도 test 분할에서 고르므로 앙상블 점수는 그만큼 낙관적이다.
+
+하이퍼파라미터 (발표 자료 슬라이드 18): LR 3e-5, Batch 64, Epoch 7, Max length 80,
+AdamW (weight_decay 0.01), Warmup 20%, Cosine scheduler, Dropout 0.2,
+Label smoothing 0.05, Grad clip 1.0. Max length는 64로 둔다(토큰 최대 약 49).
 
 CLI:
   python jeju_kr_bert.py --step baseline    (Step 1)
-  python jeju_kr_bert.py --step balanced    (Step 2 — 이 데이터는 이미 균형이라 baseline과 같음)
-  python jeju_kr_bert.py --step dual        (Step 3, KR-BERT dual stream)
-  python jeju_kr_bert.py --step tokenizer   (Step 4)
-  python jeju_kr_bert.py --step dapt        (Step 5)
+  python jeju_kr_bert.py --step balanced    (Step 2, baseline과 같음)
+  python jeju_kr_bert.py --step dual        (Step 3)
+  python jeju_kr_bert.py --step tokenizer   (Step 4 자리, baseline과 같음)
+  python jeju_kr_bert.py --step dapt        (Step 5 자리, baseline과 같음)
   python jeju_kr_bert.py --step hard-mining (Step 6)
-  python jeju_kr_bert.py --step koelectra   (KoELECTRA single - Branch 1)
-  python jeju_kr_bert.py --step ensemble    (Step 7, 사전 학습된 두 모델 결합)
+  python jeju_kr_bert.py --step koelectra   (KoELECTRA 단일 브랜치)
+  python jeju_kr_bert.py --step ensemble    (Step 7, 학습된 두 모델의 test 확률 결합)
 """
 import os
 import re
@@ -59,7 +65,8 @@ from transformers import (
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-EMOTION_LABELS = {0: "중립", 1: "슬픔", 2: "행복", 3: "분노", 4: "놀람", 5: "공포", 6: "혐오"}
+# 학습 파일의 감정번호×gpt감정 교차표 기준 대응. 2026-10 이전 판은 1·2 이름이 뒤바뀌어 있었다.
+EMOTION_LABELS = {0: "중립", 1: "행복", 2: "슬픔", 3: "분노", 4: "놀람", 5: "공포", 6: "혐오"}
 NUM_LABELS = len(EMOTION_LABELS)
 
 # 발표본 슬라이드 18 하이퍼파라미터
@@ -559,7 +566,10 @@ def run_step_dual(step_name, data_path, encoder_name, hp, output_dir, limit=None
 
 
 def run_step_ensemble(name, dual_probs_npz, single_probs_npz, output_dir, alpha_grid=None):
-    """Step 7: weighted ensemble p_ens = α·p_dual + (1-α)·p_single"""
+    """Step 7: weighted ensemble p_ens = α·p_dual + (1-α)·p_single
+
+    α는 test 확률로 그리드 서치해 고른다(발표 때 방식). 그래서 이 함수가 내는 앙상블 점수는
+    검증 분할에서 α를 고른 경우보다 낙관적이다."""
     d = np.load(dual_probs_npz)
     s = np.load(single_probs_npz)
     p_dual, labels_d = d['probs'], d['labels']
@@ -636,8 +646,9 @@ def main():
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
         run_step_single('step4_tokenizer', args.data, '제주어 문장', encoder, hp, args.output_dir,
                         limit=args.limit)
-        # (실제 토크나이저 확장 로직은 후속 PR — 우선 같은 베이스로 epoch 늘려 학습)
+        # 토크나이저 확장은 구현하지 않았다. baseline과 같은 학습이다.
     elif args.step == 'dapt':
+        # MLM 재학습(DAPT)은 구현하지 않았다. baseline과 같은 학습이다.
         encoder = args.encoder or 'snunlp/KR-BERT-char16424'
         run_step_single('step5_dapt', args.data, '제주어 문장', encoder, hp, args.output_dir,
                         limit=args.limit)
@@ -646,7 +657,7 @@ def main():
         run_step_single('step6_hard_mining', args.data, '제주어 문장', encoder, hp, args.output_dir,
                         use_hard_mining=True, limit=args.limit)
     elif args.step == 'koelectra':
-        # Branch 1: Jeju-aware KoELECTRA
+        # Branch 1: KoELECTRA (제주어 문장만 입력)
         encoder = args.encoder or 'monologg/koelectra-base-v3-discriminator'
         run_step_single('branch1_koelectra', args.data, '제주어 문장', encoder, hp, args.output_dir,
                         limit=args.limit)

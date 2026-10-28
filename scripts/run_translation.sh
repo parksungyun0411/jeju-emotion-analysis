@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # 제주어↔표준어 KoBART 번역 학습 러너 (양방향 단일 모델, 방향 prefix).
-# 사용: bash scripts/run_translation.sh [EPOCHS]
+# 사용: DATA=<xlsx 경로> bash scripts/run_translation.sh [EPOCHS]
 #
-# ⚠️ 단일 MPS GPU 경합 방지: 감정 goal run(scripts/run_goal.sh)과 동시에 실행하지 말 것.
-#    감정 학습이 끝난 뒤에 실행한다. (마스터 설계 "7. 작업 순서 / GPU 직렬화")
+# 단일 MPS GPU 경합 방지: 감정 학습(scripts/run_goal.sh)과 동시에 실행하지 말 것.
+# 감정 학습이 끝난 뒤에 실행한다.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
 EPOCHS="${1:-5}"
-DATA="../2학기_감정분류/merged_jeju_balanced_sorted.xlsx"
+DATA="${DATA:-merged_jeju_balanced_sorted.xlsx}"
 OUT="results_translation"
 LOG="$OUT/translation_run.log"
 export TOKENIZERS_PARALLELISM=false

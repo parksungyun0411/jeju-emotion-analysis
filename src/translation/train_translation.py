@@ -1,7 +1,7 @@
 """
 제주어 ↔ 표준어 번역 — KoBART seq2seq 파인튜닝
 
-마스터 설계 "3. 서브시스템 B — 번역 모델" 구현.
+docs/개발설계서.md §4.2(번역 모델) 구현.
 - 사전학습 한국어 seq2seq KoBART (gogamza/kobart-base-v2) 파인튜닝.
 - 양방향 단일 모델 + 방향 prefix (한 모델로 두 방향 학습):
     제주어→표준어: 입력 "표준어로: <제주어>" → 타깃 <표준어>
@@ -339,7 +339,7 @@ def run_train(data_path, direction, hp, output_dir, limit=None):
 
 def main():
     parser = argparse.ArgumentParser(description="제주어↔표준어 KoBART 번역 학습")
-    parser.add_argument("--data", default="../2학기_감정분류/merged_jeju_balanced_sorted.xlsx")
+    parser.add_argument("--data", default="merged_jeju_balanced_sorted.xlsx")
     parser.add_argument("--output-dir", default="results_translation")
     parser.add_argument("--direction", choices=["both", "j2s", "s2j"], default="both",
                         help="both=각 쌍을 양방향 2 샘플로 (기본)")

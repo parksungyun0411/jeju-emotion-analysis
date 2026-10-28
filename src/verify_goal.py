@@ -8,6 +8,12 @@ results 디렉토리의 각 단계 *_report.txt 에서 Test F1-Macro 를 읽어
   - 각 단계: 발표본 F1 - TOL 이상이면 PASS (균형 데이터라 초기 단계는 보통 초과)
   - 전체 GOAL: 최종 앙상블(step7)이 발표본 0.8404 - TOL 이상이면 달성
 
+주의:
+  - 발표 수치와 이 스크립트가 읽는 점수는 모두 행 단위 분할(test 행의 70.4%가 train에도 있는
+    문장)에서 잰 값이다. PASS와 GOAL 달성은 발표 수치를 다시 냈는지만 뜻하고 일반화 성능을
+    뜻하지 않는다.
+  - step4·step5는 baseline과 같은 학습이라 그 줄의 PASS는 해당 기법의 효과가 아니다.
+
 사용:
   python src/verify_goal.py --results-dir results_kr_bert
   (exit code 0 = GOAL 달성, 1 = 미달/결과 누락)
