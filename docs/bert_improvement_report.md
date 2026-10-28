@@ -36,8 +36,8 @@ Noise filtering(신뢰도 하위 30% 제거), Grad clip 1.0.
 | 6 | + Hard Mining | 0.8003 |
 | 7 | + 앙상블 (KoELECTRA + Dual KR-BERT) | 0.8404 |
 
-학습 파일은 감정별 행 수를 맞추려고 같은 문장을 최대 56번 복제했다. 이 파일을 행 단위로 7:1:2로 나누면
-test 행의 70.4%가 train에도 있는 문장이므로, 위 수치는 일반화 성능이 아니다
+학습 파일은 감정별 행 수를 맞추려고 같은 문장을 한 감정 안에서 최대 52번 복제했다. 이 파일을 행 단위로
+7:1:2로 나누면 test 행의 70.4%가 train에도 있는 문장이므로, 위 수치는 일반화 성능이 아니다
 ([누수 진단](https://github.com/parksungyun0411/jeju-emotion-lora/blob/main/reports/leakage.md)).
 
 모델 구조(슬라이드 11~16):
