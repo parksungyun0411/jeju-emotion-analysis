@@ -1,6 +1,6 @@
 # 제주어 챗봇 앱 (서브시스템 C)
 
-제주어↔표준어 **번역**과 제주어 **감정 분석**을 하나의 채팅 UI로 제공하는
+제주어↔표준어 번역과 제주어 감정 분석을 하나의 채팅 UI로 제공하는
 FastAPI 백엔드 + 순수 정적 프론트엔드.
 
 졸업 뒤(2026년 5월) 개인적으로 덧붙인 확장 코드다. 학습된 모델 가중치는 저장소에 없어
@@ -34,16 +34,16 @@ uvicorn app.main:app --reload
 pip install -r requirements.txt
 ```
 
-- `fastapi`, `uvicorn[standard]` — 웹 서버 (requirements.txt 에 포함).
+- `fastapi`, `uvicorn[standard]`: 웹 서버 (requirements.txt 에 포함).
 - 추론 시점에만 필요(지연 로드): `torch`, `transformers`, 그리고 번역 래퍼의
   의존성. 모델 아티팩트가 없으면 이 라이브러리들은 import 되지 않으며,
   앱은 정상 기동한다.
 
 ## 모델 아티팩트 경로
 
-서비스는 **지연 로드**(lazy)다. 앱 시작 시 모델을 올리지 않고, 첫 요청 때 올린다.
+서비스는 지연 로드(lazy)다. 앱 시작 시 모델을 올리지 않고, 첫 요청 때 올린다.
 아티팩트가 없으면 해당 기능은 `available=false` 가 되고, 호출 시 `503` 과 안내
-메시지를 반환한다 (graceful degradation — 앱 자체는 항상 뜬다).
+메시지를 반환한다 (graceful degradation, 앱 자체는 항상 뜬다).
 
 | 서비스 | 기본 경로 | 필요한 산출물 |
 |--------|-----------|----------------|
@@ -72,11 +72,11 @@ p_ens = α · p_dual + (1 - α) · p_single
 
 | 메서드 | 경로 | 요청 | 응답 |
 |--------|------|------|------|
-| GET  | `/api/health`    | — | 각 서비스 `available`/상세 상태 |
+| GET  | `/api/health`    | - | 각 서비스 `available`/상세 상태 |
 | POST | `/api/translate` | `{text, direction:"j2s"\|"s2j"}` | `{translation}` (unavailable → 503) |
 | POST | `/api/emotion`   | `{text, std_text?}` | `{label, label_id, scores}` (unavailable → 503) |
 | POST | `/api/chat`      | `{text, direction?}` | j2s(기본): `{translation, emotion}` 동시 / s2j: 번역만 |
-| GET  | `/`              | — | 채팅 UI (`static/index.html`) |
+| GET  | `/`              | - | 채팅 UI (`static/index.html`) |
 
 `/api/chat` 의 감정 분석은 `direction="j2s"` 일 때만 수행하며, 감정 모델이
 unavailable 이어도 번역 결과는 반환한다 (감정 필드만 `null`).

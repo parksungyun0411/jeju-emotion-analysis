@@ -1,6 +1,6 @@
-# 제주올 (Jeju All-in-One) — Web App
+# 제주올 (Jeju All-in-One): Web App
 
-제주 여행·생활 올인원 모바일 웹앱. **Next.js 15 (App Router, TypeScript, Tailwind)**.
+제주 여행·생활 올인원 모바일 웹앱. Next.js 15 (App Router, TypeScript, Tailwind).
 4개 탭으로 구성된 모바일 우선 반응형 앱입니다.
 
 졸업 프로젝트(2025) 뒤 2026년 5월에 개인적으로 덧붙인 확장 코드이며, 4인 팀 졸업 프로젝트의 산출물이 아닙니다.
@@ -26,7 +26,7 @@ npm install
 cp .env.example .env.local
 #  - 키가 비어 있어도 앱은 동작합니다.
 
-# 3) DB 마이그레이션 (커뮤니티/유저 — SQLite)
+# 3) DB 마이그레이션 (커뮤니티/유저: SQLite)
 npx prisma migrate dev --name init
 
 # 4) 개발 서버
@@ -36,7 +36,7 @@ npm run dev
 
 ### ML 서비스(탭1 번역/감정) 별도 기동
 
-탭1의 번역/감정 기능은 리포 루트의 **FastAPI ML 서비스**(`../app`)가 별도 프로세스로
+탭1의 번역/감정 기능은 리포 루트의 FastAPI ML 서비스(`../app`)가 별도 프로세스로
 떠 있어야 동작합니다. (없으면 "모델 학습 중" 안내 표시)
 
 ```bash
